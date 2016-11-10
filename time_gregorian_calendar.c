@@ -46,6 +46,8 @@
 #define SECS_OF_400_YEAR_LOOP (DAYS_OF_400_YEAR_LOOP * SECS_OF_DAY)
 #define SECS_BEFORE_1970 (DAYS_BEFORE_1970 * SECS_OF_DAY)
 ***/
+const int MONTHS_OF_YEAR = 12;
+
 const int SECS_OF_DAY = 86400ll;
 const int SECS_OF_HOUR = 3600ll;
 const int SECS_OF_MINUTE = 60ll;
@@ -78,7 +80,7 @@ const time_t SECS_OF_NONLEAP_YEAR = (365ll * 86400ll);
 const time_t SECS_OF_LEAP_LOOP = ((365ll * 4ll + 1ll) * 86400ll);
 const time_t SECS_OF_100_YEAR_LOOP = ((24ll * 366ll + 76ll * 365ll) * 86400ll);
 const time_t SECS_OF_400_YEAR_LOOP = (((24ll * 366ll + 76ll * 365ll) * 4ll + 1ll) * 86400ll);
-const time_t SECS_BEFORE_1970 = ((((24ll * 366ll + 76ll * 365ll) * 4ll + 1ll) * 4ll + (24ll * 366ll + 76ll * 365ll) * 3ll + 366ll * 17ll + 365ll * 52ll) * 86400ll);
+const time_t SECS_OF_AD_BEFORE_1970 = ((((24ll * 366ll + 76ll * 365ll) * 4ll + 1ll) * 4ll + (24ll * 366ll + 76ll * 365ll) * 3ll + 366ll * 17ll + 365ll * 52ll) * 86400ll);
 
 const int SECS_OF_JANUARY = 31 * 86400;
 const int SECS_OF_FEBRUARY_LEAP = 29 * 86400;
@@ -94,6 +96,14 @@ const int SECS_OF_OCTOBER = 31 * 86400;
 const int SECS_OF_NOVEMBER = 30 * 86400;
 const int SECS_OF_DECEMBER = 31 * 86400;
 
+const int SECS_OF_MONTHS[12] = {
+		31 * 86400, 28 * 86400,
+		31 * 86400, 30 * 86400,
+		31 * 86400, 30 * 86400,
+		31 * 86400, 31 * 86400,
+		30 * 86400, 31 * 86400,
+		30 * 86400, 31 * 86400
+};
 static struct tm RESULT_GMTIME_GRE;
 
 struct tm *gmtime_by_gre_day(const time_t *timeptr)
@@ -116,20 +126,19 @@ struct tm *gmtime_by_gre_day(const time_t *timeptr)
 	}
 	else
 	{
-		lltime = *timeptr;
+		lltime = timeptr[0];
 	}
-	iNumDay = lltime / SECS_OF_DAY + DAYS_BEFORE_1970;
+	iNumDay = (lltime + SECS_OF_AD_BEFORE_1970)/ SECS_OF_DAY;//lltime / SECS_OF_DAY + DAYS_BEFORE_1970 seems err.
 	iHMS = lltime % SECS_OF_DAY;
 	//set BC AND AD flag
 	if(iNumDay >= 0)
 	{
 		isADFlag = 1;
-//		++iNumDay;//plus 1 means there is no 0000-01-00.
 	}
 	else
 	{
 		isADFlag = -1;
-//		iNumDay =-iNumDay - 1;
+		iNumDay =-iNumDay;
 	}
 	/***YEAR MONTH DAY***/
 	//check 400-year loop
@@ -161,7 +170,7 @@ struct tm *gmtime_by_gre_day(const time_t *timeptr)
 		iNumDay -= DAYS_OF_NONLEAP_YEAR * iLeftYears;
 	}
 	//there is neither BC 0 nor AD 0.
-	if(iNumDay >= 0 && iHMS >= 0)//back in time
+	if(iNumDay >= 0)//back in time
 	{
 		++RESULT_GMTIME_GRE.tm_year;
 	}
@@ -196,67 +205,67 @@ struct tm *gmtime_by_gre_day(const time_t *timeptr)
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_JANUARY) <= 0)
 	{//January
 		RESULT_GMTIME_GRE.tm_mon = 1;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_JANUARY;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_JANUARY + 1;
 	}
 	if(iNumDay > 0 && isLeapFlag == 1 && (iNumDay-=DAYS_OF_FEBRUARY_LEAP) <= 0)
 	{//February in leap year
 		RESULT_GMTIME_GRE.tm_mon = 2;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_FEBRUARY_LEAP;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_FEBRUARY_LEAP + 1;
 	}
 	if(iNumDay > 0 && isLeapFlag == 0 && (iNumDay-=DAYS_OF_FEBRUARY_NONLEAP) <= 0)
 	{//February in nonleap year
 		RESULT_GMTIME_GRE.tm_mon = 2;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_FEBRUARY_NONLEAP;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_FEBRUARY_NONLEAP + 1;
 	}
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_MARCH) <= 0)
 	{//March
 		RESULT_GMTIME_GRE.tm_mon = 3;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_MARCH;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_MARCH + 1;
 	}
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_APRIL) <= 0)
 	{//April
 		RESULT_GMTIME_GRE.tm_mon = 4;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_APRIL;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_APRIL + 1;
 	}
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_MAY) <= 0)
 	{//May
 		RESULT_GMTIME_GRE.tm_mon = 5;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_MAY;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_MAY + 1;
 	}
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_JUNE) <= 0)
 	{//June
 		RESULT_GMTIME_GRE.tm_mon = 6;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_JUNE;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_JUNE + 1;
 	}
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_JULY) <= 0)
 	{//July
 		RESULT_GMTIME_GRE.tm_mon = 7;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_JULY;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_JULY + 1;
 	}
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_AUGUST) <= 0)
 	{//August
 		RESULT_GMTIME_GRE.tm_mon = 8;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_AUGUST;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_AUGUST + 1;
 	}
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_SEPTEMBER) <= 0)
 	{//September
 		RESULT_GMTIME_GRE.tm_mon = 9;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_SEPTEMBER;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_SEPTEMBER + 1;
 	}
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_OCTOBER) <= 0)
 	{//October
 		RESULT_GMTIME_GRE.tm_mon = 10;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_OCTOBER;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_OCTOBER + 1;
 	}
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_NOVEMBER) <= 0)
 	{//November
 		RESULT_GMTIME_GRE.tm_mon = 11;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_NOVEMBER;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_NOVEMBER + 1;
 	}
 	if(iNumDay > 0 && (iNumDay-=DAYS_OF_DECEMBER) <= 0)
 	{//December
 		RESULT_GMTIME_GRE.tm_mon = 12;
-		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_DECEMBER;
+		RESULT_GMTIME_GRE.tm_mday = iNumDay + DAYS_OF_DECEMBER + 1;
 	}
 	/***HOUR MINUTE SECOND***/
 	if(iHMS == 0)
@@ -308,8 +317,7 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 	{
 		lltime = *timeptr;
 	}
-	llADSec = lltime + SECS_BEFORE_1970;
-	iHMS = lltime % SECS_OF_DAY;
+	llADSec = lltime + SECS_OF_AD_BEFORE_1970;
 	//set BC AND AD flag
 	if(llADSec >= 0)
 	{
@@ -351,7 +359,7 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 		llADSec -= SECS_OF_NONLEAP_YEAR * iLeftYears;
 	}
 	//there is neither BC 0 nor AD 0.
-	if(llADSec >= 0 && iHMS >= 0)//back in time
+	if(llADSec >= 0)//back in time
 	{
 		++itmyear;
 	}
@@ -380,76 +388,29 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 	if(isADFlag == -1)
 	{
 		itmyear = -itmyear;//set year
-		llADSec = (isLeapFlag==0 ? DAYS_OF_NONLEAP_YEAR : DAYS_OF_LEAP_YEAR) - llADSec;
+		llADSec = (isLeapFlag==0 ? SECS_OF_NONLEAP_YEAR : SECS_OF_LEAP_YEAR) - llADSec;
 	}
 	//check month and day
-	if(llADSec > 0 && (llADSec-=DAYS_OF_JANUARY) <= 0)
-	{//January
-		itmmon = 1;
-		itmmday = llADSec + DAYS_OF_JANUARY;
-	}
-	if(llADSec > 0 && isLeapFlag == 1 && (llADSec-=DAYS_OF_FEBRUARY_LEAP) <= 0)
-	{//February in leap year
-		itmmon = 2;
-		itmmday = llADSec + DAYS_OF_FEBRUARY_LEAP;
-	}
-	if(llADSec > 0 && isLeapFlag == 0 && (llADSec-=DAYS_OF_FEBRUARY_NONLEAP) <= 0)
-	{//February in nonleap year
-		itmmon = 2;
-		itmmday = llADSec + DAYS_OF_FEBRUARY_NONLEAP;
-	}
-	if(llADSec > 0 && (llADSec-=DAYS_OF_MARCH) <= 0)
-	{//March
-		itmmon = 3;
-		itmmday = llADSec + DAYS_OF_MARCH;
-	}
-	if(llADSec > 0 && (llADSec-=DAYS_OF_APRIL) <= 0)
-	{//April
-		itmmon = 4;
-		itmmday = llADSec + DAYS_OF_APRIL;
-	}
-	if(llADSec > 0 && (llADSec-=DAYS_OF_MAY) <= 0)
-	{//May
-		itmmon = 5;
-		itmmday = llADSec + DAYS_OF_MAY;
-	}
-	if(llADSec > 0 && (llADSec-=DAYS_OF_JUNE) <= 0)
-	{//June
-		itmmon = 6;
-		itmmday = llADSec + DAYS_OF_JUNE;
-	}
-	if(llADSec > 0 && (llADSec-=DAYS_OF_JULY) <= 0)
-	{//July
-		itmmon = 7;
-		itmmday = llADSec + DAYS_OF_JULY;
-	}
-	if(llADSec > 0 && (llADSec-=DAYS_OF_AUGUST) <= 0)
-	{//August
-		itmmon = 8;
-		itmmday = llADSec + DAYS_OF_AUGUST;
-	}
-	if(llADSec > 0 && (llADSec-=DAYS_OF_SEPTEMBER) <= 0)
-	{//September
-		itmmon = 9;
-		itmmday = llADSec + DAYS_OF_SEPTEMBER;
-	}
-	if(llADSec > 0 && (llADSec-=DAYS_OF_OCTOBER) <= 0)
-	{//October
-		itmmon = 10;
-		itmmday = llADSec + DAYS_OF_OCTOBER;
-	}
-	if(llADSec > 0 && (llADSec-=DAYS_OF_NOVEMBER) <= 0)
-	{//November
-		itmmon = 11;
-		itmmday = llADSec + DAYS_OF_NOVEMBER;
-	}
-	if(llADSec > 0 && (llADSec-=DAYS_OF_DECEMBER) <= 0)
-	{//December
-		itmmon = 12;
-		itmmday = llADSec + DAYS_OF_DECEMBER;
+	int leapSecs = 0;//not very efficient.
+	if(llADSec >= 0)
+	{
+		for(int i=0; i < MONTHS_OF_YEAR; ++i)
+		{
+			if(i+1 == 2)
+			{
+				leapSecs = isLeapFlag * SECS_OF_DAY;
+			}
+			if((llADSec-= SECS_OF_MONTHS[i] + leapSecs) <= 0)
+			{
+				itmmon = i + 1;
+				itmmday = (llADSec += SECS_OF_MONTHS[i] + leapSecs) / SECS_OF_DAY + 1;
+				break;
+			}
+			leapSecs = 0;
+		}
 	}
 	/***HOUR MINUTE SECOND***/
-	if(iHMS == 0)
+	if(llADSec == 0)
 	{
 		itmhour = 0;
 		itmmin = 0;
@@ -457,11 +418,15 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 	}
 	else
 	{
-		//handle BC
-		if(iHMS < 0)
-		{
-			iHMS += SECS_OF_DAY;//iHMS is negative at this time.
-		}
+//		if(llADSec < 0)
+//		{
+//			llADSec += SECS_OF_MONTHS[itmmon-1];
+//			if(isLeapFlag == 1 && itmmon == 2)
+//			{
+//				llADSec += SECS_OF_DAY;
+//			}
+//		}
+		iHMS = llADSec % SECS_OF_DAY;
 		itmhour = iHMS / SECS_OF_HOUR;
 		itmmin = (iHMS / SECS_OF_MINUTE) % SECS_OF_MINUTE;
 		itmsec = iHMS % SECS_OF_MINUTE;
@@ -480,6 +445,7 @@ struct tm *gmtime_by_gre(const time_t *timeptr)
 {
 	struct tm *result = NULL;
 	result=gmtime_by_gre_day(timeptr);
+//	result=gmtime_by_gre_sec(timeptr);
 	return result;
 }
 
@@ -498,8 +464,8 @@ void test_all_gre_constant(void)
 	time_t secsOfLeapLoop		= SECS_OF_LEAP_LOOP;
 	time_t secsOf100LeapLoop	= SECS_OF_100_YEAR_LOOP;
 	time_t secsOf400LeapLoop	= SECS_OF_400_YEAR_LOOP;
-	time_t secsBefore1970		= SECS_BEFORE_1970;
-	struct tm *pGTMge = gmtime_by_gre(&temp);//&temp NULL
+	time_t secsBefore1970		= SECS_OF_AD_BEFORE_1970;
+	struct tm *pGTMge = gmtime_by_gre(NULL);//&temp NULL
 	printf("The value of SECS_OF_DAY is %d\n", SECS_OF_DAY);
 	printf("The value of SECS_OF_DAY is %"PRId64"\n", secsOfDay);
 	printf("The value of DAYS_OF_LEAP_YEAR is %"PRId64"\n", daysOfLeapYear);

@@ -54,5 +54,9 @@ int test_entry_args(int argc, char **argv);
  * */
 int test_std_stream();
 
-#endif
+/**
+ * number is 7
+ * */
+int test_custom_calendar();
 
+#endif

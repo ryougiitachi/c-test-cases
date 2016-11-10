@@ -71,6 +71,9 @@ int manage_testing_cases(int argc, char **argv)
 		case 6:
 			test_std_stream();
 			break;
+		case 7:
+			test_custom_calendar();
+			break;
 		default:
 			puts("There is no valid parameter. ");
 			break;

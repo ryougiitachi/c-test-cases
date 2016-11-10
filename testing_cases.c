@@ -12,6 +12,7 @@
 #include <time.h>
 #include <string.h>
 #include <inttypes.h>
+#include "time_gregorian_calender.h"
 #include "testing_cases.h"
 
 /**
@@ -295,5 +296,29 @@ int test_std_stream()
 	printf("The stderr status for checking buffer is %d.\n", stderr->_charbuf);
 	printf("The stderr size of buffer is %d.\n", stderr->_bufsiz);
 	printf("The stderr temporary file name is %s.\n", stderr->_tmpfname);
+	return 0;
+}
+
+/**
+ * number is 7
+ * */
+int test_custom_calendar()
+{
+	struct tm tmGre[3];
+	//warning: excess elements in array initializer
+//	time_t lltime[2]={0, -1ll, -62162323149ll};//just warning, but don't use this.
+	time_t lltime[3]={0, -1ll, -62162323149ll};
+	memcpy(tmGre, gmtime_by_gre(lltime), sizeof(struct tm));
+	memcpy(tmGre+1, gmtime_by_gre(lltime+1), sizeof(struct tm));
+	memcpy(tmGre+2, gmtime_by_gre(lltime+2), sizeof(struct tm));
+	printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
+			tmGre[0].tm_year, tmGre[0].tm_mon, tmGre[0].tm_mday,
+			tmGre[0].tm_hour, tmGre[0].tm_min, tmGre[0].tm_sec);
+	printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
+			tmGre[1].tm_year, tmGre[1].tm_mon, tmGre[1].tm_mday,
+			tmGre[1].tm_hour, tmGre[1].tm_min, tmGre[1].tm_sec);
+	printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
+			tmGre[2].tm_year, tmGre[2].tm_mon, tmGre[2].tm_mday,
+			tmGre[2].tm_hour, tmGre[2].tm_min, tmGre[2].tm_sec);
 	return 0;
 }
