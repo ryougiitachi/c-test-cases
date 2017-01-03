@@ -32,6 +32,9 @@ const time_t SECS_OF_100_YEAR_LOOP = DAYS_OF_100_YEAR_LOOP * SECS_OF_DAY;
 const time_t SECS_OF_400_YEAR_LOOP = DAYS_OF_400_YEAR_LOOP * SECS_OF_DAY;
 const time_t SECS_BEFORE_1970 = DAYS_BEFORE_1970 * SECS_OF_DAY;
 ***/
+
+int is_leap_year(int year);
+
 /**
  * in seconds
  * */

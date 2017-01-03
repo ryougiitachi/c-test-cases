@@ -59,4 +59,9 @@ int test_std_stream();
  * */
 int test_custom_calendar();
 
+/**
+ * number is 8
+ * */
+int test_absolute_from_gregorian();
+
 #endif
