@@ -62,6 +62,7 @@ const int DAYS_OF_400_YEAR_LOOP = (24ll * 366ll + 76ll * 365ll) * 4ll + 1ll;//36
 const int DAYS_BEFORE_1970 = 1969 * 365 + 1969 / 4 - 1969 / 100 + 1969 / 400 + 1;//because AD 0004-02-28
 
 const int DAYS_CUTOVER_FOR_GROGORIAN = 577736;
+const int DAYS_CUTOVER_FOR_JULIAN = 1154;//3*365+31+28 <==> 0004-02-28
 const int DAYS_CUTOVER_FOR_JULIAN_FIXED = 0;
 const int DAYS_CUTOVER_FOR_JULIAN_TYPO = 0;
 
@@ -86,6 +87,11 @@ const time_t SECS_OF_LEAP_LOOP = ((365ll * 4ll + 1ll) * 86400ll);
 const time_t SECS_OF_100_YEAR_LOOP = ((24ll * 366ll + 76ll * 365ll) * 86400ll);
 const time_t SECS_OF_400_YEAR_LOOP = (((24ll * 366ll + 76ll * 365ll) * 4ll + 1ll) * 86400ll);
 const time_t SECS_OF_AD_BEFORE_1970 = ((1969 * 365 + 1969 / 4 - 1969 / 100 + 1969 / 400 + 1) * 86400ll);//because AD 0004-02-28
+
+const time_t SECS_CUTOVER_FOR_GROGORIAN = 577736ll * 86400;
+const time_t SECS_CUTOVER_FOR_JULIAN = 1154ll * 86400;
+const time_t SECS_CUTOVER_FOR_JULIAN_FIXED = 0 * 86400;
+const time_t SECS_CUTOVER_FOR_JULIAN_TYPO = 0 * 86400;
 
 const int SECS_OF_JANUARY = 31 * 86400;
 const int SECS_OF_FEBRUARY_LEAP = 29 * 86400;
@@ -118,6 +124,9 @@ const int SECS_OF_MONTHS_LEAP[12] = {
 		30 * 86400, 31 * 86400,
 		30 * 86400, 31 * 86400
 };
+
+struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs);
+struct tm *calcal_by_julian_sec(time_t fixedDateSecs);
 
 static struct tm RESULT_GMTIME_GRE;
 
@@ -336,20 +345,55 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 		lltime = *timeptr;
 	}
 	llADSec = lltime + SECS_OF_AD_BEFORE_1970;
-	if(llADSec >= DAYS_CUTOVER_FOR_GROGORIAN * SECS_OF_DAY)
-	{
-		llADSec -= SECS_OF_DAY;
+	if(llADSec >= SECS_CUTOVER_FOR_GROGORIAN)
+	{//since Gregorian Calendar
+		return calcal_by_gregorian_sec(llADSec);
 	}
+	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN)
+	{//since Julian Calendar with correct leap year
+		return &RESULT_GMTIME_GRE;
+	}
+	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN_FIXED)
+	{//since Julian Calendar without leap year
+		return &RESULT_GMTIME_GRE;
+	}
+
+	return &RESULT_GMTIME_GRE;
+}
+
+int is_leap_year(int year)
+{
+	return ((year&3)==0 && (year%100)!=0) || (year%400)==0 ? 1 : 0;
+}
+
+struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs)
+{
+	time_t llADSec;
+	int isADFlag = 0;
+	int isLeapFlag = 0;
+	int iNum400Years = 0;
+	int iNum100Years = 0;
+	int iLeapYears = 0;
+	int iLeftYears = 0;
+	int iHMS = 0;
+	//Temporary variables of result.
+	int itmyear = 0;
+	int itmmon = 0;//January = 1
+	int itmmday = 0;
+	int itmhour = 0;
+	int itmmin = 0;
+	int itmsec = 0;
+
+	llADSec = fixedDateSecs - SECS_OF_DAY;//0004-02-28
 	//set BC AND AD flag
 	if(llADSec >= 0)
 	{
 		isADFlag = 1;
-//		++iNumDay;//plus 1 means there is no 0000-01-00.
 	}
 	else
-	{
-		isADFlag = -1;llADSec =-llADSec;
-//		iNumDay =-iNumDay - 1;
+	{//not very possible for gregorian calendar
+		isADFlag = -1;
+		llADSec =-llADSec;
 	}
 	/***YEAR MONTH DAY***/
 	//check 400-year loop
@@ -386,26 +430,6 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 		++itmyear;
 	}
 	//check leap or nonleap year
-/**	if(isADFlag==1 && (itmyear & 3)==0 && (itmyear % 100) != 0)
-	{//AD leap year
-		isLeapFlag = 1;
-	}
-	else if(isADFlag==1 && (itmyear % 400 ) == 0)
-	{//AD leap year
-		isLeapFlag = 1;
-	}
-	else if(isADFlag==-1 && ((itmyear-1) & 3)==0 && ((itmyear-1) % 100) != 0)
-	{//BC nonleap year
-		isLeapFlag = 1;
-	}
-	else if(isADFlag==-1 && ((itmyear-1) % 400 ) == 0)
-	{//BC nonleap year
-		isLeapFlag = 1;
-	}
-	else
-	{
-		isLeapFlag = 0;
-	}***/
 	if(isADFlag == 1)
 	{// AD
 		isLeapFlag = is_leap_year(itmyear);
@@ -421,18 +445,9 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 		llADSec = (isLeapFlag==0 ? SECS_OF_NONLEAP_YEAR : SECS_OF_LEAP_YEAR) - llADSec;
 	}
 	//check month and day
-	const int *pSecPerMonths = NULL;
 	//WAHT IF llADSec < 0? both month and day are 0?
 	if(llADSec >= 0)
 	{
-//		if(isLeapFlag)
-//		{
-//			pSecPerMonths = SECS_OF_MONTHS_LEAP;
-//		}
-//		else
-//		{
-//			pSecPerMonths = SECS_OF_MONTHS_COMMON;
-//		}
 		for(int i=0; i < MONTHS_OF_YEAR; ++i)
 		{
 			if((llADSec -= SECS_OF_MONTHS_COMMON[i]) <= 0)
@@ -489,16 +504,11 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 	return &RESULT_GMTIME_GRE;
 }
 
-int is_leap_year(int year)
-{
-	return ((year&3)==0 && (year%100)!=0) || (year%400)==0 ? 1 : 0;
-}
-
 struct tm *gmtime_by_gre(const time_t *timeptr)
 {
 	struct tm *result = NULL;
-	result=gmtime_by_gre_day(timeptr);
-//	result=gmtime_by_gre_sec(timeptr);
+//	result=gmtime_by_gre_day(timeptr);
+	result=gmtime_by_gre_sec(timeptr);
 	return result;
 }
 
