@@ -309,7 +309,7 @@ int test_custom_calendar()
 	struct tm tmGre[3];
 	//warning: excess elements in array initializer
 //	time_t lltime[2]={0, -1ll, -62162323149ll};//just warning, but don't use this.
-	time_t lltime[3]={0, -1ll, -62162323149ll};
+	time_t lltime[3]={-12219292800ll, -63745228800LL, -62162323149ll};
 	memcpy(tmGre, gmtime_by_gre(lltime), sizeof(struct tm));
 	memcpy(tmGre+1, gmtime_by_gre(lltime+1), sizeof(struct tm));
 	memcpy(tmGre+2, gmtime_by_gre(lltime+2), sizeof(struct tm));

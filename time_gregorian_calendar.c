@@ -83,15 +83,16 @@ const int DAYS_OF_DECEMBER = 31;
 const time_t SECS_OF_LEAP_YEAR = (366ll * 86400ll);
 const time_t SECS_OF_NONLEAP_YEAR = (365ll * 86400ll);
 
+const time_t SECS_OF_LEAP_TYPO = ((365ll * 3ll + 1ll) * 86400ll);
 const time_t SECS_OF_LEAP_LOOP = ((365ll * 4ll + 1ll) * 86400ll);
 const time_t SECS_OF_100_YEAR_LOOP = ((24ll * 366ll + 76ll * 365ll) * 86400ll);
 const time_t SECS_OF_400_YEAR_LOOP = (((24ll * 366ll + 76ll * 365ll) * 4ll + 1ll) * 86400ll);
 const time_t SECS_OF_AD_BEFORE_1970 = ((1969 * 365 + 1969 / 4 - 1969 / 100 + 1969 / 400 + 1) * 86400ll);//because AD 0004-02-28
 
-const time_t SECS_CUTOVER_FOR_GROGORIAN = 577736ll * 86400;
-const time_t SECS_CUTOVER_FOR_JULIAN = 1154ll * 86400;
-const time_t SECS_CUTOVER_FOR_JULIAN_FIXED = 0 * 86400;
-const time_t SECS_CUTOVER_FOR_JULIAN_TYPO = 0 * 86400;
+const time_t SECS_CUTOVER_FOR_GROGORIAN = 577736ll * 86400;// AD 1582-10-15
+const time_t SECS_CUTOVER_FOR_JULIAN = 1154ll * 86400;//365 * 3 + 59 AD 0004-03-01
+const time_t SECS_CUTOVER_FOR_JULIAN_FIXED = -3226ll * 86400;//365*9 - 59 BC 0009-03-01
+const time_t SECS_CUTOVER_FOR_JULIAN_TYPO = -16438ll * 86400;//365 * 45 + 13 BC 0045-01-01
 
 const int SECS_OF_JANUARY = 31 * 86400;
 const int SECS_OF_FEBRUARY_LEAP = 29 * 86400;
@@ -127,6 +128,8 @@ const int SECS_OF_MONTHS_LEAP[12] = {
 
 struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs);
 struct tm *calcal_by_julian_sec(time_t fixedDateSecs);
+struct tm *calcal_by_julian_noleap_sec(time_t fixedDateSecs);
+struct tm *calcal_by_julian_typo_sec(time_t fixedDateSecs);
 
 static struct tm RESULT_GMTIME_GRE;
 
@@ -351,11 +354,19 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 	}
 	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN)
 	{//since Julian Calendar with correct leap year
-		return &RESULT_GMTIME_GRE;
+		return calcal_by_julian_sec(llADSec);
 	}
 	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN_FIXED)
 	{//since Julian Calendar without leap year
-		return &RESULT_GMTIME_GRE;
+		return calcal_by_julian_noleap_sec(llADSec);
+	}
+	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN_TYPO)
+	{//since Julian Calendar with incorrect leap year
+		return calcal_by_julian_typo_sec(llADSec);
+	}
+	else
+	{//before BC -0045-01-01
+		return calcal_by_julian_sec(llADSec);
 	}
 
 	return &RESULT_GMTIME_GRE;
@@ -364,6 +375,16 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 int is_leap_year(int year)
 {
 	return ((year&3)==0 && (year%100)!=0) || (year%400)==0 ? 1 : 0;
+}
+
+int is_leap_year_julian(int year)
+{
+	return (year&3)==0 ? 1 : 0;
+}
+
+int is_leap_year_incorrect(int year)
+{
+	return (year%3)==0 ? 1 : 0;
 }
 
 struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs)
@@ -488,6 +509,318 @@ struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs)
 //				llADSec += SECS_OF_DAY;
 //			}
 //		}
+		iHMS = llADSec % SECS_OF_DAY;
+		itmhour = iHMS / SECS_OF_HOUR;
+		itmmin = (iHMS / SECS_OF_MINUTE) % SECS_OF_MINUTE;
+		itmsec = iHMS % SECS_OF_MINUTE;
+	}
+
+	RESULT_GMTIME_GRE.tm_year = itmyear;
+	RESULT_GMTIME_GRE.tm_mon = itmmon;
+	RESULT_GMTIME_GRE.tm_mday = itmmday;
+	RESULT_GMTIME_GRE.tm_hour = itmhour;
+	RESULT_GMTIME_GRE.tm_min = itmmin;
+	RESULT_GMTIME_GRE.tm_sec = itmsec;
+
+	return &RESULT_GMTIME_GRE;
+}
+
+struct tm *calcal_by_julian_sec(time_t fixedDateSecs)
+{
+	time_t llADSec;
+	int isADFlag = 0;
+	int isLeapFlag = 0;
+	int iLeapYears = 0;
+	int iLeftYears = 0;
+	int iHMS = 0;
+	//Temporary variables of result.
+	int itmyear = 0;
+	int itmmon = 0;//January = 1
+	int itmmday = 0;
+	int itmhour = 0;
+	int itmmin = 0;
+	int itmsec = 0;
+
+	llADSec = fixedDateSecs + SECS_OF_DAY;//offset effect caused by 0004-02-28
+	//set BC AND AD flag
+	if(llADSec >= 0)
+	{
+		isADFlag = 1;
+	}
+	else
+	{//not very possible for gregorian calendar
+		isADFlag = -1;
+		llADSec =-llADSec;
+	}
+	/***YEAR MONTH DAY***/
+	//check leap year in 4-year loop
+	if(llADSec >= SECS_OF_LEAP_LOOP)
+	{
+		iLeapYears = llADSec / SECS_OF_LEAP_LOOP;
+		itmyear += iLeapYears * 4;
+		llADSec -= SECS_OF_LEAP_LOOP * iLeapYears;
+	}
+	//check nonleap year
+	if(llADSec >= SECS_OF_NONLEAP_YEAR)
+	{
+		iLeftYears = llADSec / SECS_OF_NONLEAP_YEAR;
+		itmyear += iLeftYears;
+		llADSec -= SECS_OF_NONLEAP_YEAR * iLeftYears;
+	}
+	//there is neither BC 0 nor AD 0.
+	if(llADSec >= 0)//back in time
+	{
+		++itmyear;
+	}
+	//check leap year for julian calendar
+	if(isADFlag == 1)
+	{// AD
+		isLeapFlag = is_leap_year_julian(itmyear);
+	}
+	if(isADFlag == -1)
+	{// BC
+		isLeapFlag = is_leap_year_julian(itmyear - 1);
+	}
+	//handle BC
+	if(isADFlag == -1)
+	{//Maybe, there is still sometHing wrong in B.C. ...
+		itmyear = -itmyear;//set year
+		llADSec = (isLeapFlag==0 ? SECS_OF_NONLEAP_YEAR : SECS_OF_LEAP_YEAR) - llADSec;
+	}
+	//check month and day
+	if(llADSec >= 0)
+	{
+		for(int i=0; i < MONTHS_OF_YEAR; ++i)
+		{
+			if((llADSec -= SECS_OF_MONTHS_COMMON[i]) <= 0)
+			{
+				itmmon = i + 1;
+				itmmday = (llADSec += SECS_OF_MONTHS_COMMON[i]) / SECS_OF_DAY + 1;
+				break;
+			}
+		}
+		if(isLeapFlag && itmmon > 2)
+		{
+			--itmmday;
+			if(itmmday <= 0)
+			{
+				--itmmon;
+				itmmday = SECS_OF_MONTHS_COMMON[itmmon];//SECS_OF_MONTHS_LEAP[itmmon]
+				if(itmmon == 2)
+				{
+					++itmmday;
+				}
+			}
+		}
+	}
+	/***HOUR MINUTE SECOND***/
+	if(llADSec == 0)
+	{
+		itmhour = 0;
+		itmmin = 0;
+		itmsec = 0;
+	}
+	else
+	{
+		iHMS = llADSec % SECS_OF_DAY;
+		itmhour = iHMS / SECS_OF_HOUR;
+		itmmin = (iHMS / SECS_OF_MINUTE) % SECS_OF_MINUTE;
+		itmsec = iHMS % SECS_OF_MINUTE;
+	}
+
+	RESULT_GMTIME_GRE.tm_year = itmyear;
+	RESULT_GMTIME_GRE.tm_mon = itmmon;
+	RESULT_GMTIME_GRE.tm_mday = itmmday;
+	RESULT_GMTIME_GRE.tm_hour = itmhour;
+	RESULT_GMTIME_GRE.tm_min = itmmin;
+	RESULT_GMTIME_GRE.tm_sec = itmsec;
+
+	return &RESULT_GMTIME_GRE;
+}
+
+/**
+ * There is no AD 0004-02-29
+ * */
+struct tm *calcal_by_julian_noleap_sec(time_t fixedDateSecs)
+{
+	time_t llADSec;
+	int isADFlag = 0;
+	int iLeftYears = 0;
+	int iHMS = 0;
+	//Temporary variables of result.
+	int itmyear = 0;
+	int itmmon = 0;//January = 1
+	int itmmday = 0;
+	int itmhour = 0;
+	int itmmin = 0;
+	int itmsec = 0;
+
+	llADSec = fixedDateSecs;//not necessary to adjust fixed date?
+	//set BC AND AD flag
+	if(llADSec >= 0)
+	{
+		isADFlag = 1;
+	}
+	else
+	{//not very possible for gregorian calendar
+		isADFlag = -1;
+		llADSec =-llADSec;
+	}
+	/***YEAR MONTH DAY***/
+	//check nonleap year
+	if(llADSec >= SECS_OF_NONLEAP_YEAR)
+	{
+		iLeftYears = llADSec / SECS_OF_NONLEAP_YEAR;
+		itmyear += iLeftYears;
+		llADSec -= SECS_OF_NONLEAP_YEAR * iLeftYears;
+	}
+	//there is neither BC 0 nor AD 0.
+	if(llADSec >= 0)//back in time
+	{
+		++itmyear;
+	}
+	//no need to check leap year for this calendar
+	//handle BC
+	if(isADFlag == -1)
+	{//Maybe, there is still sometHing wrong in B.C. ...
+		itmyear = -itmyear;//set year
+		llADSec = SECS_OF_NONLEAP_YEAR - llADSec;
+	}
+	//check month and day
+	if(llADSec >= 0)
+	{
+		for(int i=0; i < MONTHS_OF_YEAR; ++i)
+		{
+			if((llADSec -= SECS_OF_MONTHS_COMMON[i]) <= 0)
+			{
+				itmmon = i + 1;
+				itmmday = (llADSec += SECS_OF_MONTHS_COMMON[i]) / SECS_OF_DAY + 1;
+				break;
+			}
+		}
+	}
+	/***HOUR MINUTE SECOND***/
+	if(llADSec == 0)
+	{
+		itmhour = 0;
+		itmmin = 0;
+		itmsec = 0;
+	}
+	else
+	{
+		iHMS = llADSec % SECS_OF_DAY;
+		itmhour = iHMS / SECS_OF_HOUR;
+		itmmin = (iHMS / SECS_OF_MINUTE) % SECS_OF_MINUTE;
+		itmsec = iHMS % SECS_OF_MINUTE;
+	}
+
+	RESULT_GMTIME_GRE.tm_year = itmyear;
+	RESULT_GMTIME_GRE.tm_mon = itmmon;
+	RESULT_GMTIME_GRE.tm_mday = itmmday;
+	RESULT_GMTIME_GRE.tm_hour = itmhour;
+	RESULT_GMTIME_GRE.tm_min = itmmin;
+	RESULT_GMTIME_GRE.tm_sec = itmsec;
+
+	return &RESULT_GMTIME_GRE;
+}
+
+struct tm *calcal_by_julian_typo_sec(time_t fixedDateSecs)
+{
+	time_t llADSec;
+	int isADFlag = 0;
+	int isLeapFlag = 0;
+	int iTypoLeapYear = 0;
+	int iLeftYears = 0;
+	int iHMS = 0;
+	//Temporary variables of result.
+	int itmyear = 0;
+	int itmmon = 0;//January = 1
+	int itmmday = 0;
+	int itmhour = 0;
+	int itmmin = 0;
+	int itmsec = 0;
+
+	llADSec = fixedDateSecs;//not necessary to adjust fixed date?
+	//set BC AND AD flag
+	if(llADSec >= 0)
+	{
+		isADFlag = 1;
+	}
+	else
+	{//not very possible for gregorian calendar
+		isADFlag = -1;
+		llADSec =-llADSec;
+	}
+	/***YEAR MONTH DAY***/
+	//check incorrect leap year loop
+	if(llADSec >= SECS_OF_LEAP_TYPO)
+	{
+		iTypoLeapYear = llADSec / SECS_OF_LEAP_TYPO;
+		itmyear += iTypoLeapYear;
+		llADSec -= SECS_OF_LEAP_TYPO * iTypoLeapYear;
+	}
+	//check nonleap year
+	if(llADSec >= SECS_OF_NONLEAP_YEAR)
+	{
+		iLeftYears = llADSec / SECS_OF_NONLEAP_YEAR;
+		itmyear += iLeftYears;
+		llADSec -= SECS_OF_NONLEAP_YEAR * iLeftYears;
+	}
+	//there is neither BC 0 nor AD 0.
+	if(llADSec >= 0)//back in time
+	{
+		++itmyear;
+	}
+	//check leap year for incorrect julian calendar
+	if(isADFlag >= 0)
+	{// AD
+		isLeapFlag = is_leap_year_incorrect(itmyear);
+	}
+	else
+	{// BC
+		isLeapFlag = is_leap_year_incorrect(itmyear - 1);
+	}
+	//handle BC
+	if(isADFlag == -1)
+	{//Maybe, there is still sometHing wrong in B.C. ...
+		itmyear = -itmyear;//set year
+		llADSec = SECS_OF_NONLEAP_YEAR - llADSec;
+	}
+	//check month and day
+	if(llADSec >= 0)
+	{
+		for(int i=0; i < MONTHS_OF_YEAR; ++i)
+		{
+			if((llADSec -= SECS_OF_MONTHS_COMMON[i]) <= 0)
+			{
+				itmmon = i + 1;
+				itmmday = (llADSec += SECS_OF_MONTHS_COMMON[i]) / SECS_OF_DAY + 1;
+				break;
+			}
+		}
+		if(isLeapFlag && itmmon > 2)
+		{
+			--itmmday;
+			if(itmmday <= 0)
+			{
+				--itmmon;
+				itmmday = SECS_OF_MONTHS_COMMON[itmmon];//SECS_OF_MONTHS_LEAP[itmmon]
+				if(itmmon == 2)
+				{
+					++itmmday;
+				}
+			}
+		}
+	}
+	/***HOUR MINUTE SECOND***/
+	if(llADSec == 0)
+	{
+		itmhour = 0;
+		itmmin = 0;
+		itmsec = 0;
+	}
+	else
+	{
 		iHMS = llADSec % SECS_OF_DAY;
 		itmhour = iHMS / SECS_OF_HOUR;
 		itmmin = (iHMS / SECS_OF_MINUTE) % SECS_OF_MINUTE;
