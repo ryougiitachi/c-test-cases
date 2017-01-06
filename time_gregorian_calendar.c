@@ -12,39 +12,7 @@
 #include "time_gregorian_calendar.h"
 /***
 //There is something wrong when using macro, which seems the address of the macro?
-#define SECS_OF_DAY 24ll * 60ll * 60ll
-#define SECS_OF_HOUR 3600ll
-#define SECS_OF_MINUTE 60ll
-
-#define DAYS_OF_LEAP_YEAR 366ll
-#define DAYS_OF_NONLEAP_YEAR 365ll
-
-#define DAYS_OF_LEAP_LOOP (DAYS_OF_LEAP_YEAR * 4ll + 1ll)
-#define DAYS_OF_100_YEAR_LOOP (24ll * 366ll + 76ll * 365ll)
-#define DAYS_OF_400_YEAR_LOOP (DAYS_OF_100_YEAR_LOOP * 4ll + 1ll)
-#define DAYS_BEFORE_1970 (DAYS_OF_400_YEAR_LOOP * 4ll + DAYS_OF_100_YEAR_LOOP * 3ll + DAYS_OF_LEAP_YEAR * 17ll + DAYS_OF_NONLEAP_YEAR * (53ll-1ll))
-
-#define DAYS_OF_JANUARY 31
-#define DAYS_OF_FEBRUARY_LEAP 29
-#define DAYS_OF_FEBRUARY_NONLEAP 28
-#define DAYS_OF_MARCH 31
-#define DAYS_OF_APRIL 30
-#define DAYS_OF_MAY 31
-#define DAYS_OF_JUNE 30
-#define DAYS_OF_JULY 31
-#define DAYS_OF_AUGUST 31
-#define DAYS_OF_SEPTEMBER 30
-#define DAYS_OF_OCTOBER 31
-#define DAYS_OF_NOVEMBER 30
-#define DAYS_OF_DECEMBER 31
-
-#define SECS_OF_LEAP_YEAR (DAYS_OF_LEAP_YEAR * SECS_OF_DAY)
-#define SECS_OF_NONLEAP_YEAR (DAYS_OF_NONLEAP_YEAR * SECS_OF_DAY)
-
-#define SECS_OF_LEAP_LOOP (DAYS_OF_LEAP_LOOP * SECS_OF_DAY)
-#define SECS_OF_100_YEAR_LOOP (DAYS_OF_100_YEAR_LOOP * SECS_OF_DAY)
-#define SECS_OF_400_YEAR_LOOP (DAYS_OF_400_YEAR_LOOP * SECS_OF_DAY)
-#define SECS_BEFORE_1970 (DAYS_BEFORE_1970 * SECS_OF_DAY)
+//This part has been removed.
 ***/
 const int MONTHS_OF_YEAR = 12;
 
@@ -94,19 +62,19 @@ const time_t SECS_CUTOVER_FOR_JULIAN = 1154ll * 86400;//365 * 3 + 59 AD 0004-03-
 const time_t SECS_CUTOVER_FOR_JULIAN_FIXED = -3226ll * 86400;//365*9 - 59 BC 0009-03-01
 const time_t SECS_CUTOVER_FOR_JULIAN_TYPO = -16438ll * 86400;//365 * 45 + 13 BC 0045-01-01
 
-const int SECS_OF_JANUARY = 31 * 86400;
-const int SECS_OF_FEBRUARY_LEAP = 29 * 86400;
-const int SECS_OF_FEBRUARY_NONLEAP = 28 * 86400;
-const int SECS_OF_MARCH = 31 * 86400;
-const int SECS_OF_APRIL = 30 * 86400;
-const int SECS_OF_MAY = 31 * 86400;
-const int SECS_OF_JUNE = 30 * 86400;
-const int SECS_OF_JULY = 31 * 86400;
-const int SECS_OF_AUGUST = 31 * 86400;
-const int SECS_OF_SEPTEMBER = 30 * 86400;
-const int SECS_OF_OCTOBER = 31 * 86400;
-const int SECS_OF_NOVEMBER = 30 * 86400;
-const int SECS_OF_DECEMBER = 31 * 86400;
+//const int SECS_OF_JANUARY = 31 * 86400;
+//const int SECS_OF_FEBRUARY_LEAP = 29 * 86400;
+//const int SECS_OF_FEBRUARY_NONLEAP = 28 * 86400;
+//const int SECS_OF_MARCH = 31 * 86400;
+//const int SECS_OF_APRIL = 30 * 86400;
+//const int SECS_OF_MAY = 31 * 86400;
+//const int SECS_OF_JUNE = 30 * 86400;
+//const int SECS_OF_JULY = 31 * 86400;
+//const int SECS_OF_AUGUST = 31 * 86400;
+//const int SECS_OF_SEPTEMBER = 30 * 86400;
+//const int SECS_OF_OCTOBER = 31 * 86400;
+//const int SECS_OF_NOVEMBER = 30 * 86400;
+//const int SECS_OF_DECEMBER = 31 * 86400;
 
 const int SECS_OF_MONTHS_COMMON[12] = {
 		31 * 86400, 28 * 86400,
@@ -126,10 +94,12 @@ const int SECS_OF_MONTHS_LEAP[12] = {
 		30 * 86400, 31 * 86400
 };
 
+/***** Declaration in C source file starts *****/
 struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs);
 struct tm *calcal_by_julian_sec(time_t fixedDateSecs);
 struct tm *calcal_by_julian_noleap_sec(time_t fixedDateSecs);
 struct tm *calcal_by_julian_typo_sec(time_t fixedDateSecs);
+/***** Declaration in C source file ends *****/
 
 static struct tm RESULT_GMTIME_GRE;
 
@@ -501,14 +471,6 @@ struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs)
 	}
 	else
 	{
-//		if(llADSec < 0)
-//		{
-//			llADSec += SECS_OF_MONTHS[itmmon-1];
-//			if(isLeapFlag == 1 && itmmon == 2)
-//			{
-//				llADSec += SECS_OF_DAY;
-//			}
-//		}
 		iHMS = llADSec % SECS_OF_DAY;
 		itmhour = iHMS / SECS_OF_HOUR;
 		itmmin = (iHMS / SECS_OF_MINUTE) % SECS_OF_MINUTE;
