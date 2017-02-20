@@ -14,7 +14,9 @@
 #include <inttypes.h>
 //#include <glib.h>
 #include <stdlib.h>
+#include <math.h>
 #include "time_gregorian_calender.h"
+#include "time_julian_day.h"
 #include "testing_cases.h"
 
 /**
@@ -28,17 +30,31 @@ int test_basic_data_types()
 	// but different from long int, strange. it says that integer constant is too large for its type.
 	int i = 1;
 	int arrayInt[8];
+	long long ll = 123456789012ll;
+	long l= ll;
 	//(int*) ptr1, ptr2;	//compile error
 	float f = 1.1f;
+	double d = 989891234567891235.0;//it is okay until 98989123456789123.0
 	printf("The value of i is %d\n", i);
 	printf("The value of i is %i\n", i);
 	printf("The address of i is %p\n", i);			//Pointer address, also hex for address format 32bits or 64 bits.
+	printf("The value of l is %ld\n", l);			//still 4 bytes integer?
+	printf("The value of l is %"PRId64"\n", l);
+	printf("The hex value of l is %016X\n", l);
+	printf("The hex value of l is %"PRIX64"\n", l);
+	printf("The value of ll is %ld\n", ll);
+	printf("The value of ll is %"PRId64"\n", ll);
+	printf("The hex value of ll is %016lX\n", ll);
+	printf("The hex value of ll is %"PRIX64"\n", ll);
+
 	printf("Hex of float is %08X\n", f);
 	printf("The value of float is %d\n", f);
 	printf("The value of float is %09.3f\n", f);
+	printf("The division of double is %lf\n", d/100000000.0);
+	printf("The division of double is %lf\n", d/10.0/10.0/10.0/10.0/10.0/10.0/10.0/10.0);
 	printf("The address of stdout is 0x%08x\n", stdout);
 	printf("The address of stdout is 0X%p\n", stdout);			//Pointer address, p is used for expressing address value.
-	
+
 	memset((int*)arrayInt, 1, sizeof(arrayInt));
 	for(i=0; i < 8; ++i ) {
 		printf("%08X ", arrayInt[i]);
@@ -309,7 +325,7 @@ int test_custom_calendar()
 	struct tm tmGre[3];
 	//warning: excess elements in array initializer
 //	time_t lltime[2]={0, -1ll, -62162323149ll};//just warning, but don't use this.
-	time_t lltime[3]={-12219292800ll, -63745228800LL, -62162323149ll};
+	time_t lltime[3]={0, -63745228800LL, -62162323149ll};//-12219292800ll
 	memcpy(tmGre, gmtime_by_gre(lltime), sizeof(struct tm));
 	memcpy(tmGre+1, gmtime_by_gre(lltime+1), sizeof(struct tm));
 	memcpy(tmGre+2, gmtime_by_gre(lltime+2), sizeof(struct tm));
@@ -323,6 +339,12 @@ int test_custom_calendar()
 			tmGre[2].tm_year, tmGre[2].tm_mon, tmGre[2].tm_mday,
 			tmGre[2].tm_hour, tmGre[2].tm_min, tmGre[2].tm_sec);
 	test_all_gre_constant();
+
+	PJULIAN_DAY jd;
+	jd = getJulianDayBySecond(lltime);
+	printf("The julian day is %"PRId64"+%lf. \n", jd->integer, jd->decimal);
+	printf("The julian day is %lf. \n", jd->integer+jd->decimal);
+	printf("The julian day is %"PRId64". \n", jd->integer+jd->decimal);
 	return 0;
 }
 
