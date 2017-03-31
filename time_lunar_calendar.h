@@ -11,3 +11,4 @@
 const int SECONDS_OF_DAY = 24 * 60 * 60;
 
 #endif /* TIME_LUNAR_CALENDAR_H_ */
+

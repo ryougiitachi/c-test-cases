@@ -144,17 +144,27 @@ static const int SECS_OF_MONTHS_LEAP[12] = {
 #define SECS_OF_LEAP_YEAR (time_t)(366ll * 86400ll)
 #define SECS_OF_NONLEAP_YEAR (time_t)(365ll * 86400ll)
 
-#define SECS_OF_LEAP_TYPO (time_t)((365ll * 3ll + 1ll) * 86400ll)
+#define SECS_OF_LEAP_TYPO (time_t)94694400ll//(365ll * 3ll + 1ll) * 86400ll
 #define SECS_OF_LEAP_LOOP (time_t)((365ll * 4ll + 1ll) * 86400ll)
 #define SECS_OF_100_YEAR_LOOP (time_t)((24ll * 366ll + 76ll * 365ll) * 86400ll)
 #define SECS_OF_400_YEAR_LOOP (time_t)(((24ll * 366ll + 76ll * 365ll) * 4ll + 1ll) * 86400ll)
-#define SECS_OF_AD_BEFORE_1970 (time_t)((1969 * 365 + 1969 / 4 - 1969 / 100 + 1969 / 400 + 1) * 86400ll) //because AD 0004-02-28
+#define SECS_OF_AD_BEFORE_1970 (time_t)62135683200ll//because AD 0004-02-28 ((1969 * 365 + 1969 / 4 - 1969 / 100 + 1969 / 400 + 1) * 86400ll)
 
-#define SECS_CUTOVER_FOR_GROGORIAN (time_t)(577736ll * 86400)// AD 1582-10-15
-#define SECS_CUTOVER_FOR_JULIAN (time_t)(1154ll * 86400)//365 * 3 + 59 AD 0004-03-01
-#define SECS_CUTOVER_FOR_JULIAN_FIXED (time_t)(-3226ll * 86400)//365*9 - 59 BC 0009-03-01
-#define SECS_CUTOVER_FOR_JULIAN_TYPO (time_t)(-16438ll * 86400)//365 * 45 + 13 BC 0045-01-01
+//The following numbers are used to minus to time(time_t*);
+#define SECS_CUTOVER_FOR_GROGORIAN (time_t)-12219292800ll// AD 1582-10-15 62135683200ll - (577736ll * 86400)
+#define SECS_CUTOVER_FOR_JULIAN (time_t)-62035977600ll//365 * 3 + 59 AD 0004-03-01 62135683200ll - (1154ll * 86400)
+#define SECS_CUTOVER_FOR_JULIAN_FIXING (time_t)-62387971200ll//365*8 BC 0008-01-01 62135683200ll - (-2920ll * 86400)
+#define SECS_CUTOVER_FOR_JULIAN_TYPO (time_t)-63555926400ll//365 * 45 + 13 BC 0045-01-01 62135683200ll - (-16438ll * 86400)
 
+#define YEAR_OFFSET_FOR_GROGORIAN 1582
+#define YEAR_OFFSET_FOR_JULIAN 4
+#define YEAR_OFFSET_FOR_JULIAN_FIXING -8
+#define YEAR_OFFSET_FOR_JULIAN_TYPO -45
+
+#define SECS_OFFSET_FOR_GROGORIAN 24796800//(31+28+31+30+31+30+31+31+30+14) * 86400
+#define SECS_OFFSET_FOR_JULIAN 4//(31+28) * 86400
+#define SECS_OFFSET_FOR_JULIAN_FIXING 0
+#define SECS_OFFSET_FOR_JULIAN_TYPO 0
 
 #define SECS_OF_JD_BEFORE_1970 (time_t)((4713 * 365 + 4713 / 4 + 1 + 719163) * 86400ll - 43200)
 

@@ -205,7 +205,7 @@ struct tm *gmtime_by_gre_day(const time_t *timeptr)
 }
 
 /**
- * year -> month / day -> hour / minute / second
+ * basic parsing steps: year -> month / day -> hour / minute / second
  * */
 struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 {
@@ -234,28 +234,28 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 	}
 	else
 	{
-		lltime = *timeptr;
+		lltime = timeptr[0];
 	}
-	llADSec = lltime + SECS_OF_AD_BEFORE_1970;
 	if(llADSec >= SECS_CUTOVER_FOR_GROGORIAN)
-	{//since Gregorian Calendar
+	{//since Gregorian Calendar AD 1582-10-15
+		llADSec = lltime - SECS_CUTOVER_FOR_GROGORIAN;
 		return calcal_by_gregorian_sec(llADSec);
 	}
 	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN)
-	{//since Julian Calendar with correct leap year
+	{//since Julian Calendar with correct leap year AD 0004-03-01
 		return calcal_by_julian_sec(llADSec);
 	}
-	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN_FIXED)
-	{//since Julian Calendar without leap year
+	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN_FIXING)
+	{//since Julian Calendar without leap year BC 0009-03-01
 		return calcal_by_julian_noleap_sec(llADSec);
 	}
 	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN_TYPO)
-	{//since Julian Calendar with incorrect leap year
+	{//since Julian Calendar with incorrect leap year BC 0045-01-01
 		return calcal_by_julian_typo_sec(llADSec);
 	}
 	else
-	{//before BC -0045-01-01
-		return calcal_by_julian_sec(llADSec);
+	{//before BC 0045-01-01
+		return calcal_by_julian_sec(llADSec);//TODO: NEED ANOTHER METHOD.
 	}
 
 	return &RESULT_GMTIME_GRE;
@@ -464,7 +464,7 @@ struct tm *calcal_by_julian_sec(time_t fixedDateSecs)
 	}
 	//handle BC
 	if(isADFlag == -1)
-	{//Maybe, there is still sometHing wrong in B.C. ...
+	{//Maybe, there is still something wrong in B.C. ...
 		itmyear = -itmyear;//set year
 		llADSec = (isLeapFlag==0 ? SECS_OF_NONLEAP_YEAR : SECS_OF_LEAP_YEAR) - llADSec;
 	}
@@ -572,7 +572,7 @@ struct tm *calcal_by_julian_noleap_sec(time_t fixedDateSecs)
 	{
 		for(int i=0; i < MONTHS_OF_YEAR; ++i)
 		{
-			if((llADSec -= SECS_OF_MONTHS_COMMON[i]) <= 0)
+			if((llADSec -= SECS_OF_MONTHS_COMMON[i]) < 0)// <= is incorrect. it will enter next loop when 0
 			{
 				itmmon = i + 1;
 				itmmday = (llADSec += SECS_OF_MONTHS_COMMON[i]) / SECS_OF_DAY + 1;
@@ -605,6 +605,8 @@ struct tm *calcal_by_julian_noleap_sec(time_t fixedDateSecs)
 	return &RESULT_GMTIME_GRE;
 }
 
+//Currently, there is something wrong.
+//It is not always typo after BC 0045 this period(BC 0045-01-01 - BC 0009-12-31).
 struct tm *calcal_by_julian_typo_sec(time_t fixedDateSecs)
 {
 	time_t llADSec;
@@ -637,7 +639,7 @@ struct tm *calcal_by_julian_typo_sec(time_t fixedDateSecs)
 	if(llADSec >= SECS_OF_LEAP_TYPO)
 	{
 		iTypoLeapYear = llADSec / SECS_OF_LEAP_TYPO;
-		itmyear += iTypoLeapYear;
+		itmyear += iTypoLeapYear * 3;
 		llADSec -= SECS_OF_LEAP_TYPO * iTypoLeapYear;
 	}
 	//check nonleap year
@@ -672,7 +674,7 @@ struct tm *calcal_by_julian_typo_sec(time_t fixedDateSecs)
 	{
 		for(int i=0; i < MONTHS_OF_YEAR; ++i)
 		{
-			if((llADSec -= SECS_OF_MONTHS_COMMON[i]) <= 0)
+			if((llADSec -= SECS_OF_MONTHS_COMMON[i]) < 0)// <= is incorrect
 			{
 				itmmon = i + 1;
 				itmmday = (llADSec += SECS_OF_MONTHS_COMMON[i]) / SECS_OF_DAY + 1;
