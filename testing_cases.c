@@ -320,12 +320,21 @@ int test_std_stream()
 /**
  * number is 7
  * */
-int test_custom_calendar()
+int test_custom_calendar(int argc, char **argv)
 {
-	struct tm tmGre[3];
+	time_t lltime;
+	struct tm tmGregorian;
+	for(int i = 0; i < argc; ++i)
+	{
+		lltime = atoll(argv[i]);
+		memcpy(&tmGregorian, gmtime_by_gre(&lltime), sizeof(struct tm));
+		printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
+				tmGregorian.tm_year, tmGregorian.tm_mon, tmGregorian.tm_mday,
+				tmGregorian.tm_hour, tmGregorian.tm_min, tmGregorian.tm_sec);
+	}
 	//warning: excess elements in array initializer
 //	time_t lltime[2]={0, -1ll, -62162323149ll};//just warning, but don't use this.
-	time_t lltime[3]={0, -63745228800LL, -62162323149ll};//-12219292800ll
+/***	time_t lltime[3]={-65286547149ll, -63555926400LL, -62414409600ll};//-12219292800ll
 	memcpy(tmGre, gmtime_by_gre(lltime), sizeof(struct tm));
 	memcpy(tmGre+1, gmtime_by_gre(lltime+1), sizeof(struct tm));
 	memcpy(tmGre+2, gmtime_by_gre(lltime+2), sizeof(struct tm));
@@ -337,8 +346,8 @@ int test_custom_calendar()
 			tmGre[1].tm_hour, tmGre[1].tm_min, tmGre[1].tm_sec);
 	printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
 			tmGre[2].tm_year, tmGre[2].tm_mon, tmGre[2].tm_mday,
-			tmGre[2].tm_hour, tmGre[2].tm_min, tmGre[2].tm_sec);
-	test_all_gre_constant();
+			tmGre[2].tm_hour, tmGre[2].tm_min, tmGre[2].tm_sec);***/
+//	test_all_gre_constant();
 
 	PJULIAN_DAY jd;
 	jd = getJulianDayBySecond(lltime);

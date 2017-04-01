@@ -57,7 +57,7 @@ int test_std_stream();
 /**
  * number is 7
  * */
-int test_custom_calendar();
+int test_custom_calendar(int argc, char **argv);
 
 /**
  * number is 8
