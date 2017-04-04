@@ -74,6 +74,9 @@ int manage_testing_cases(int argc, char **argv)
 		case 7:
 			test_custom_calendar();
 			break;
+		case 8:
+			test_absolute_from_gregorian();
+			break;
 		default:
 			puts("There is no valid parameter. ");
 			break;

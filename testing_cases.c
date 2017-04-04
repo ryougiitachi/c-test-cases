@@ -12,6 +12,8 @@
 #include <time.h>
 #include <string.h>
 #include <inttypes.h>
+//#include <glib.h>
+#include <stdlib.h>
 #include "time_gregorian_calender.h"
 #include "testing_cases.h"
 
@@ -320,5 +322,47 @@ int test_custom_calendar()
 	printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
 			tmGre[2].tm_year, tmGre[2].tm_mon, tmGre[2].tm_mday,
 			tmGre[2].tm_hour, tmGre[2].tm_min, tmGre[2].tm_sec);
+	test_all_gre_constant();
 	return 0;
+}
+
+/**
+ * number is 8
+ * */
+int test_absolute_from_gregorian()
+{
+	int pyear = 1970;
+	int pmonth = 1;
+	int pday = 1;
+	const int DAYS_OF_MONTH[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+	/* WARNING: This uses 1/1/1 == '1' as the absolute date */
+	/* Absolute date given gregorian */
+	long absolutedays, monthdays;
+	int m;
+	long dayyears;
+	div_t tmpdiv;
+
+	absolutedays = pday; /* Days so far this month */
+	monthdays = 0;
+	for (m = 1; m < pmonth; m++)
+	{
+		monthdays += DAYS_OF_MONTH[m-1];
+	}
+	/* Days in prior months /this/ year */
+	dayyears = 365 * (pyear-1); /* days in prior years */
+	/*	g_print ("dayyears is: %d\n", dayyears); */
+	tmpdiv = div (pyear-1, 4);
+	dayyears = dayyears + tmpdiv.quot;
+	/*	g_print ("dayyears is: %d\n", dayyears); */
+	/* add julian leap days in prior years */
+	tmpdiv = div(pyear-1, 100);
+	dayyears = dayyears - (tmpdiv.quot); /* minus prior century
+							   years */
+	tmpdiv = div(pyear-1, 400);
+	dayyears = dayyears + (tmpdiv.quot); /* Add back the years
+							       divisible by 400 */
+	/*	g_print ("days is: %d\ndayyears is: %d\n",absolutedays,dayyears); */
+//	printf("%04d-%02d-%02d is %"PRId64"\n", pyear, pmonth, pday, (absolutedays + dayyears + monthdays));
+	printf("%04d-%02d-%02d is %ld\n", pyear, pmonth, pday, (absolutedays + dayyears + monthdays));
+	return (absolutedays + dayyears + monthdays);
 }
