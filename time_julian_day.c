@@ -23,7 +23,11 @@ static SJULIAN_DAY RESULT_JULIAN_DAY;
 
 PJULIAN_DAY getJulianDayBySecond(const time_t *timeptr)
 {
-	time_t lltime = *timeptr;
+	if(!timeptr)
+	{
+		return &RESULT_JULIAN_DAY;
+	}
+	time_t lltime = timeptr[0];
 	time_t llinteger;
 	time_t lldecimal = 0.0;
 	time_t llJDsecs = lltime + SECS_OF_JD_BEFORE_1970;

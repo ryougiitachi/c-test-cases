@@ -210,7 +210,6 @@ struct tm *gmtime_by_gre_day(const time_t *timeptr)
 struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 {
 	time_t lltime = 0;
-	time_t llADSec = 0;
 
 	int isADFlag = 0;
 	int isLeapFlag = 0;
@@ -236,25 +235,25 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 	{
 		lltime = timeptr[0];
 	}
-	if(llADSec >= SECS_CUTOVER_FOR_GROGORIAN)
+	if(lltime >= SECS_CUTOVER_FOR_GROGORIAN)
 	{//since Gregorian Calendar AD 1582-10-15
-		return calcal_by_gregorian_sec(llADSec);
+		return calcal_by_gregorian_sec(lltime);
 	}
-	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN)
+	else if(lltime >= SECS_CUTOVER_FOR_JULIAN)
 	{//since Julian Calendar with correct leap year AD 0004-03-01
-		return calcal_by_julian_sec(llADSec);
+		return calcal_by_julian_sec(lltime);
 	}
-	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN_FIXING)
+	else if(lltime >= SECS_CUTOVER_FOR_JULIAN_FIXING)
 	{//since Julian Calendar without leap year BC 0009-03-01
-		return calcal_by_julian_noleap_sec(llADSec);
+		return calcal_by_julian_noleap_sec(lltime);
 	}
-	else if(llADSec >= SECS_CUTOVER_FOR_JULIAN_TYPO)
+	else if(lltime >= SECS_CUTOVER_FOR_JULIAN_TYPO)
 	{//since Julian Calendar with incorrect leap year BC 0045-01-01
-		return calcal_by_julian_typo_sec(llADSec);
+		return calcal_by_julian_typo_sec(lltime);
 	}
 	else
 	{//before BC 0045-01-01
-		return calcal_by_julian_sec(llADSec);//TODO: NEED ANOTHER METHOD.
+		return calcal_by_julian_sec(lltime);//TODO: NEED ANOTHER METHOD.
 	}
 
 	return &RESULT_GMTIME_GRE;
@@ -314,7 +313,6 @@ struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs)
 		itmyear += iNum400Years * 400;
 		llADSec -= SECS_OF_400_YEAR_LOOP * iNum400Years;
 	}
-	llADSec = fixedDateSecs - SECS_CUTOVER_FOR_GROGORIAN;
 	//check nonleap 100-year loop
 	if(llADSec >= SECS_OF_100_YEAR_LOOP)
 	{
@@ -336,11 +334,11 @@ struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs)
 		itmyear += iLeftYears;
 		llADSec -= SECS_OF_NONLEAP_YEAR * iLeftYears;
 	}
-	//there is neither BC 0 nor AD 0.
-	if(llADSec >= 0)//back in time
-	{
-		++itmyear;
-	}
+	//there is neither BC 0 nor AD 0. Maybe no need to add one year. 
+//	if(llADSec >= 0)//back in time
+//	{
+//		++itmyear;
+//	}
 	itmyear += YEAR_OFFSET_FOR_GROGORIAN;
 	//check leap or nonleap year
 	if(isADFlag == 1)

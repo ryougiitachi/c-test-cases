@@ -319,12 +319,14 @@ int test_std_stream()
 /**
  * number is 7
  * */
-int test_custom_calendar(int argc, char **argv)
+int test_custom_calendar(int argc, const char **argv)
 {
-	time_t lltime;
+	time_t lltime = 0;
 	struct tm tmGregorian;
+	char *szTime;
 	for(int i = 0; i < argc; ++i)
 	{
+		szTime = argv[i];
 		lltime = atoll(argv[i]);
 		memcpy(&tmGregorian, gmtime_by_gre(&lltime), sizeof(struct tm));
 		printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
@@ -349,7 +351,7 @@ int test_custom_calendar(int argc, char **argv)
 //	test_all_gre_constant();
 
 	PJULIAN_DAY jd;
-	jd = getJulianDayBySecond(lltime);
+	jd = getJulianDayBySecond(&lltime);
 	printf("The julian day is %"PRId64"+%lf. \n", jd->integer, jd->decimal);
 	printf("The julian day is %lf. \n", jd->integer+jd->decimal);
 	printf("The julian day is %"PRId64". \n", jd->integer+jd->decimal);
