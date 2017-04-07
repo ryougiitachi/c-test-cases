@@ -240,11 +240,11 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 		return calcal_by_gregorian_sec(lltime);
 	}
 	else if(lltime >= SECS_CUTOVER_FOR_JULIAN)
-	{//since Julian Calendar with correct leap year AD 0004-03-01
+	{//since Julian Calendar with correct leap year AD 0005-01-01
 		return calcal_by_julian_sec(lltime);
 	}
 	else if(lltime >= SECS_CUTOVER_FOR_JULIAN_FIXING)
-	{//since Julian Calendar without leap year BC 0009-03-01
+	{//since Julian Calendar without leap year BC 0008-01-01
 		return calcal_by_julian_noleap_sec(lltime);
 	}
 	else if(lltime >= SECS_CUTOVER_FOR_JULIAN_TYPO)
@@ -253,7 +253,7 @@ struct tm *gmtime_by_gre_sec(const time_t *timeptr)
 	}
 	else
 	{//before BC 0045-01-01
-		return calcal_by_julian_sec(lltime);//TODO: NEED ANOTHER METHOD.
+		return calcal_by_julian_sec(lltime);
 	}
 
 	return &RESULT_GMTIME_GRE;
@@ -305,6 +305,7 @@ struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs)
 	}***/
 	llADSec = fixedDateSecs - SECS_CUTOVER_FOR_GROGORIAN;
 	llADSec += SECS_OFFSET_FOR_GROGORIAN;
+	llADSec -= SECS_OF_DAY;
 	/***YEAR MONTH DAY***/
 	//check 400-year loop
 	if(llADSec >= SECS_OF_400_YEAR_LOOP)
@@ -423,19 +424,23 @@ struct tm *calcal_by_julian_sec(time_t fixedDateSecs)
 	int itmmin = 0;
 	int itmsec = 0;
 
-//	llADSec = fixedDateSecs + SECS_OF_DAY;//offset effect caused by 0004-02-28
+	llADSec = fixedDateSecs;
+	//In real history, there is no ad 0004-02-29, but there is 0004-02-29 for julian rule.
+	llADSec += SECS_OF_DAY;
+	llADSec += SECS_OF_AD_BEFORE_1970;
 	//set BC AND AD flag
-/***	if(llADSec >= 0)
+/******/	if(llADSec >= 0)
 	{
 		isADFlag = 1;
 	}
 	else
 	{//not very possible for gregorian calendar
 		isADFlag = -1;
+		llADSec += SECS_OF_DAY;//need to adjust a day for BC, unknown reason.
 		llADSec =-llADSec;
-	}***/
-	llADSec = fixedDateSecs - SECS_CUTOVER_FOR_JULIAN;
-	llADSec += SECS_OFFSET_FOR_JULIAN;
+	}
+//	llADSec = fixedDateSecs - SECS_CUTOVER_FOR_JULIAN;
+//	llADSec += SECS_OFFSET_FOR_JULIAN;
 	/***YEAR MONTH DAY***/
 	//check leap year in 4-year loop
 	if(llADSec >= SECS_OF_LEAP_LOOP)
@@ -452,24 +457,17 @@ struct tm *calcal_by_julian_sec(time_t fixedDateSecs)
 		llADSec -= SECS_OF_NONLEAP_YEAR * iLeftYears;
 	}
 	//there is neither BC 0 nor AD 0.
-	if(llADSec >= 0)//back in time
+	if(llADSec >= 0 && isADFlag == 1)//back in time
 	{
 		++itmyear;
 	}
-	itmyear += YEAR_OFFSET_FOR_JULIAN;
 	//check leap year for julian calendar
-	if(isADFlag == 1)
-	{// AD
-		isLeapFlag = is_leap_year_julian(itmyear);
-	}
-	if(isADFlag == -1)
-	{// BC
-		isLeapFlag = is_leap_year_julian(itmyear - 1);
-	}
+	isLeapFlag = is_leap_year_julian(itmyear);
 	//handle BC
 	if(isADFlag == -1)
 	{//Maybe, there is still something wrong in B.C. ...
 		itmyear = -itmyear;//set year
+		--itmyear;//maybe not necessary
 		llADSec = (isLeapFlag==0 ? SECS_OF_NONLEAP_YEAR : SECS_OF_LEAP_YEAR) - llADSec;
 	}
 	//check month and day
@@ -477,7 +475,7 @@ struct tm *calcal_by_julian_sec(time_t fixedDateSecs)
 	{
 		for(int i=0; i < MONTHS_OF_YEAR; ++i)
 		{
-			if((llADSec -= SECS_OF_MONTHS_COMMON[i]) <= 0)
+			if((llADSec -= SECS_OF_MONTHS_COMMON[i]) < 0)// <= is incorrect. it will enter next loop when 0
 			{
 				itmmon = i + 1;
 				itmmday = (llADSec += SECS_OF_MONTHS_COMMON[i]) / SECS_OF_DAY + 1;
@@ -551,8 +549,8 @@ struct tm *calcal_by_julian_noleap_sec(time_t fixedDateSecs)
 		isADFlag = -1;
 		llADSec =-llADSec;
 	}***/
-	llADSec = fixedDateSecs - SECS_CUTOVER_FOR_JULIAN;
-	llADSec += SECS_OFFSET_FOR_JULIAN;
+	llADSec = fixedDateSecs - SECS_CUTOVER_FOR_JULIAN_FIXING;
+	llADSec += SECS_OFFSET_FOR_JULIAN_FIXING;
 	/***YEAR MONTH DAY***/
 	//check nonleap year
 	if(llADSec >= SECS_OF_NONLEAP_YEAR)
@@ -563,16 +561,15 @@ struct tm *calcal_by_julian_noleap_sec(time_t fixedDateSecs)
 	}
 	//there is neither BC 0 nor AD 0.
 	if(llADSec >= 0)//back in time
-	{
+	{//It should be Astronomical year numbering in this way.
 		++itmyear;
 	}
 	itmyear += YEAR_OFFSET_FOR_JULIAN_FIXING;
 	//no need to check leap year for this calendar
-	//handle BC
-	if(isADFlag == -1)
-	{//Maybe, there is still sometHing wrong in B.C. ...
-		itmyear = -itmyear;//set year
-		llADSec = SECS_OF_NONLEAP_YEAR - llADSec;
+	//It is not necessary if using Astronomical year numbering.
+	if(itmyear <= 0)
+	{
+		--itmyear;
 	}
 	//check month and day
 	if(llADSec >= 0)
@@ -641,8 +638,8 @@ struct tm *calcal_by_julian_typo_sec(time_t fixedDateSecs)
 		isADFlag = -1;
 		llADSec =-llADSec;
 	}***/
-	llADSec = fixedDateSecs - SECS_CUTOVER_FOR_JULIAN;
-	llADSec += SECS_OFFSET_FOR_JULIAN;
+	llADSec = fixedDateSecs - SECS_CUTOVER_FOR_JULIAN_TYPO;
+	llADSec += SECS_OFFSET_FOR_JULIAN_TYPO;
 	/***YEAR MONTH DAY***/
 	//check incorrect leap year loop
 	if(llADSec >= SECS_OF_LEAP_TYPO)
@@ -660,24 +657,16 @@ struct tm *calcal_by_julian_typo_sec(time_t fixedDateSecs)
 	}
 	//there is neither BC 0 nor AD 0.
 	if(llADSec >= 0)//back in time
-	{
+	{//It should be Astronomical year numbering in this way.
 		++itmyear;
 	}
 	itmyear += YEAR_OFFSET_FOR_JULIAN_TYPO;
 	//check leap year for incorrect julian calendar
-	if(isADFlag >= 0)
-	{// AD
-		isLeapFlag = is_leap_year_incorrect(itmyear);
-	}
-	else
-	{// BC
-		isLeapFlag = is_leap_year_incorrect(itmyear - 1);
-	}
-	//handle BC
-	if(isADFlag == -1)
-	{//Maybe, there is still sometHing wrong in B.C. ...
-		itmyear = -itmyear;//set year
-		llADSec = SECS_OF_NONLEAP_YEAR - llADSec;
+	isLeapFlag = is_leap_year_incorrect(itmyear - 1);
+	//It is not necessary if using Astronomical year numbering.
+	if(itmyear <= 0)
+	{
+		--itmyear;
 	}
 	//check month and day
 	if(llADSec >= 0)
