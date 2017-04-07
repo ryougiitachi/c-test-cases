@@ -321,40 +321,39 @@ int test_std_stream()
  * */
 int test_custom_calendar(int argc, const char **argv)
 {
-	time_t lltime = 0;
+	int count = 0;
+	time_t *arraylltime;
 	struct tm tmGregorian;
 	char *szTime;
+	if(count < argc)
+	{
+		arraylltime = (time_t *)malloc(argc * sizeof(time_t));
+	}
 	for(int i = 0; i < argc; ++i)
 	{
 		szTime = argv[i];
-		lltime = atoll(argv[i]);
-		memcpy(&tmGregorian, gmtime_by_gre(&lltime), sizeof(struct tm));
+		arraylltime[i] = atoll(argv[i]);
+		memcpy(&tmGregorian, gmtime_by_gre(arraylltime + i), sizeof(struct tm));
 		printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
 				tmGregorian.tm_year, tmGregorian.tm_mon, tmGregorian.tm_mday,
 				tmGregorian.tm_hour, tmGregorian.tm_min, tmGregorian.tm_sec);
 	}
 	//warning: excess elements in array initializer
 //	time_t lltime[2]={0, -1ll, -62162323149ll};//just warning, but don't use this.
-/***	time_t lltime[3]={-65286547149ll, -63555926400LL, -62414409600ll};//-12219292800ll
-	memcpy(tmGre, gmtime_by_gre(lltime), sizeof(struct tm));
-	memcpy(tmGre+1, gmtime_by_gre(lltime+1), sizeof(struct tm));
-	memcpy(tmGre+2, gmtime_by_gre(lltime+2), sizeof(struct tm));
-	printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
-			tmGre[0].tm_year, tmGre[0].tm_mon, tmGre[0].tm_mday,
-			tmGre[0].tm_hour, tmGre[0].tm_min, tmGre[0].tm_sec);
-	printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
-			tmGre[1].tm_year, tmGre[1].tm_mon, tmGre[1].tm_mday,
-			tmGre[1].tm_hour, tmGre[1].tm_min, tmGre[1].tm_sec);
-	printf("The current time is %05d-%02d-%02d %02d:%02d:%02d. \n",
-			tmGre[2].tm_year, tmGre[2].tm_mon, tmGre[2].tm_mday,
-			tmGre[2].tm_hour, tmGre[2].tm_min, tmGre[2].tm_sec);***/
+/***	time_t lltime[3]={-65286547149ll, -63555926400LL, -62414409600ll};//-12219292800ll***/
 //	test_all_gre_constant();
 
 	PJULIAN_DAY jd;
-	jd = getJulianDayBySecond(&lltime);
-	printf("The julian day is %"PRId64"+%lf. \n", jd->integer, jd->decimal);
-	printf("The julian day is %lf. \n", jd->integer+jd->decimal);
-	printf("The julian day is %"PRId64". \n", jd->integer+jd->decimal);
+	for(int i = 0; i < argc; ++i)
+	{
+		jd = getJulianDayBySecond(arraylltime + i);
+		printf("The julian day is %"PRId64"+%lf. \n", jd->integer, jd->decimal);
+		printf("The julian day is %lf. \n", jd->integer+jd->decimal);
+		//format '%I64d' expects argument of type 'long long int', but argument 2 has type 'double' [-Wformat=]
+//		printf("The julian day is %"PRId64". \n", jd->integer+jd->decimal);
+	}
+	;free(arraylltime);
+	arraylltime = NULL;
 	return 0;
 }
 
