@@ -5,6 +5,7 @@
  *      Author: 
  */
 
+#include <stdio.h>
 #include <time.h>
 #include <string.h>
 #include "time_julian_day.h"
@@ -45,4 +46,22 @@ PJULIAN_DAY getJulianDayBySecond(const time_t *timeptr)
 	RESULT_JULIAN_DAY.decimal = ddecimal;
 
 	return &RESULT_JULIAN_DAY;
+}
+
+void getSecondDayByJulian(time_t *timeptr, PJULIAN_DAY jd)
+{
+	if(timeptr == NULL || jd == NULL)
+	{
+		return;
+	}
+	//Temporarily check.
+	if(jd->integer < 0 ||  jd->decimal < 0.0)
+	{
+		return;
+	}
+	time_t llJDsecs = 0;
+	llJDsecs += jd->integer * SECS_OF_DAY;
+	llJDsecs += jd->decimal * SECS_OF_DAY;
+	llJDsecs -= SECS_OF_JD_BEFORE_1970;
+	timeptr[0] = llJDsecs;
 }

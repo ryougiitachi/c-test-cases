@@ -21,6 +21,8 @@ typedef struct _SJULIAN_DAY
 
 PJULIAN_DAY getJulianDayBySecond(const time_t *);
 
+void getSecondDayByJulian(time_t *timeptr, PJULIAN_DAY jd);
+
 #endif /* TIME_JULIAN_DAY_H_ */
 
 #ifdef __cplusplus

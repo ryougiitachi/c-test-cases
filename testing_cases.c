@@ -354,6 +354,19 @@ int test_custom_calendar(int argc, const char **argv)
 	}
 	;free(arraylltime);
 	arraylltime = NULL;
+
+	time_t lltime;
+	jd = (PJULIAN_DAY)malloc(sizeof(SJULIAN_DAY));
+	jd->integer = 0;
+	jd->decimal = 0.0;
+	getSecondDayByJulian(&lltime, jd);
+	memcpy(&tmGregorian, gmtime_by_gre(&lltime), sizeof(struct tm));
+	printf("The 2451545.0 JD is %"PRId64". \n", lltime);
+	printf("The 2451545.0 JD is %05d-%02d-%02d %02d:%02d:%02d. \n",
+			tmGregorian.tm_year, tmGregorian.tm_mon, tmGregorian.tm_mday,
+			tmGregorian.tm_hour, tmGregorian.tm_min, tmGregorian.tm_sec);
+	free(jd);
+	jd = NULL;
 	return 0;
 }
 
