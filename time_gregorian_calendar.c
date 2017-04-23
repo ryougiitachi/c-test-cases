@@ -115,9 +115,11 @@ struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs)
 	int itmmin = 0;
 	int itmsec = 0;
 
-//	llADSec = fixedDateSecs - SECS_OF_DAY;//0004-02-28
+	llADSec = fixedDateSecs;
+	llADSec += SECS_OF_AD_BEFORE_1970;
+	llADSec -= SECS_OF_DAY;//During the period from 0001-01-01 to 1582-10-15, there is a more day than gregorian calendar.
 	//set BC AND AD flag
-/***	if(llADSec >= 0)
+	if(llADSec >= 0)
 	{
 		isADFlag = 1;
 	}
@@ -125,10 +127,7 @@ struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs)
 	{//not very possible for gregorian calendar
 		isADFlag = -1;
 		llADSec =-llADSec;
-	}***/
-	llADSec = fixedDateSecs - SECS_CUTOVER_FOR_GROGORIAN;
-	llADSec += SECS_OFFSET_FOR_GROGORIAN;
-	llADSec -= SECS_OF_DAY;
+	}/******/
 	/***YEAR MONTH DAY***/
 	//check 400-year loop
 	if(llADSec >= SECS_OF_400_YEAR_LOOP)
@@ -159,24 +158,18 @@ struct tm *calcal_by_gregorian_sec(time_t fixedDateSecs)
 		llADSec -= SECS_OF_NONLEAP_YEAR * iLeftYears;
 	}
 	//there is neither BC 0 nor AD 0. Maybe no need to add one year. 
-//	if(llADSec >= 0)//back in time
-//	{
-//		++itmyear;
-//	}
-	itmyear += YEAR_OFFSET_FOR_GROGORIAN;
+	if(llADSec >= 0 && isADFlag == 1)//back in time
+	{
+		++itmyear;
+	}
+//	itmyear += YEAR_OFFSET_FOR_GROGORIAN;
 	//check leap or nonleap year
-	if(isADFlag == 1)
-	{// AD
-		isLeapFlag = is_leap_year(itmyear);
-	}
-	if(isADFlag == -1)
-	{// BC
-		isLeapFlag = is_leap_year(itmyear - 1);
-	}
+	isLeapFlag = is_leap_year(itmyear);
 	//handle BC
 	if(isADFlag == -1)
 	{
 		itmyear = -itmyear;//set year
+		--itmyear;//maybe not necessary
 		llADSec = (isLeapFlag==0 ? SECS_OF_NONLEAP_YEAR : SECS_OF_LEAP_YEAR) - llADSec;
 	}
 	//check month and day
