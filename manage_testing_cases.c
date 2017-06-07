@@ -157,6 +157,9 @@ int manage_testing_cases(int argc, char **argv)
 				case 8:
 					test_absolute_from_gregorian();
 					break;
+				case 9:
+					test_math_formula(countParams, arrayParam);
+					break;
 				default:
 					puts("There is no valid parameter. ");
 					break;

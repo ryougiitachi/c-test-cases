@@ -15,7 +15,9 @@
 //#include <glib.h>
 #include <stdlib.h>
 #include <math.h>
+#include "math_custom.h"
 #include "time_julian_day.h"
+#include "time_lunar_calendar.h"
 #include "testing_cases.h"
 
 /**
@@ -59,6 +61,18 @@ int test_basic_data_types()
 		printf("%08X ", arrayInt[i]);
 	}
 	printf("\n");
+	//test distortion of double
+	d = 12.234567889;
+	printf("d is %.20lf\n", d);
+	for(i=0; i < 8; ++i ) {
+		d /= 3600.0;
+		d *= 3600.0;
+	}
+	printf("d is %.20lf\n", d);
+	//test degree mod 360.0
+	printf("%lf is equal to %lf\n", 1095.56, getDegreeIn360(1095.56));
+	memset(&d, 0, sizeof(double));
+	printf("d is %lf\n", d);
 	return 0;
 }
 
@@ -352,14 +366,12 @@ int test_custom_calendar(int argc, const char **argv)
 		//format '%I64d' expects argument of type 'long long int', but argument 2 has type 'double' [-Wformat=]
 //		printf("The julian day is %"PRId64". \n", jd->integer+jd->decimal);
 	}
-	;free(arraylltime);
-	arraylltime = NULL;
 
 	time_t lltime;
 	jd = (PJULIAN_DAY)malloc(sizeof(SJULIAN_DAY));
 	jd->integer = 0;
 	jd->decimal = 0.0;
-	getSecondDayByJulian(&lltime, jd);
+	getSecondByJulianDay(&lltime, jd);
 	memcpy(&tmGregorian, gmtime_by_gre(&lltime), sizeof(struct tm));
 	printf("The 2451545.0 JD is %"PRId64". \n", lltime);
 	printf("The 2451545.0 JD is %05d-%02d-%02d %02d:%02d:%02d. \n",
@@ -367,6 +379,15 @@ int test_custom_calendar(int argc, const char **argv)
 			tmGregorian.tm_hour, tmGregorian.tm_min, tmGregorian.tm_sec);
 	free(jd);
 	jd = NULL;
+
+	for(int i = 0; i < argc; ++i)
+	{
+		printf("The time point %"PRId64" is %lf. \n", arraylltime[i],
+				getELP200082MELongitude(arraylltime + i));
+	}
+
+	;free(arraylltime);
+	arraylltime = NULL;
 	return 0;
 }
 
@@ -409,4 +430,16 @@ int test_absolute_from_gregorian()
 //	printf("%04d-%02d-%02d is %"PRId64"\n", pyear, pmonth, pday, (absolutedays + dayyears + monthdays));
 	printf("%04d-%02d-%02d is %ld\n", pyear, pmonth, pday, (absolutedays + dayyears + monthdays));
 	return (absolutedays + dayyears + monthdays);
+}
+
+/**
+ * number is 9
+ * */
+int test_math_formula(int argc, const char **argv)
+{
+	//test whether math.c supports radian greater than 2pi.
+	double dSin = sin(PI/2.0);
+	double dSinCircle = sin(PI/2.0 + 2.0 * PI);
+	printf("Sine of 90 degrees is %lf, and sine of 450 degrees is %lf\n", dSin, dSinCircle);//same
+	return 0;
 }

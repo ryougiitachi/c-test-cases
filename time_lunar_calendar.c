@@ -8,6 +8,7 @@
 #include <math.h>
 #include "math_custom.h"
 #include "time_calendar.h"
+#include "time_julian_day.h"
 #include "time_lunar_calendar.h"
 
 //const int SECS_OF_DAY = 86400;
@@ -19,10 +20,109 @@ const int HEAVENLY_STEM_IN_1970 = 7;
 const int EARTHLY_BRANCH_IN_1970 = 11;
 
 /**
+ * Refer to Chapter 21 in Astronomical Algorithms
+ * Terms of Nutation
+ *
+ * */
+#define COUNT_TERM_IAU1980_NUTATION 63
+//warning: 'LIST_TERM_IAU1980_NUTATION' initialized and declared 'extern'
+//it is better to not use extern here?
+STERM_IAU1980_NUTATION LIST_TERM_IAU1980_NUTATION[] = {
+		{0, 0, 0, 0, 1, -171996, -174.2, +92025, +8.9},
+		{-2, 0, 0, 2, 2, -13187, -1.6, +5736, -3.1},
+		{0, 0, 0, 2, 2, -2274, -0.2, +977, -0.5},
+		{0, 0, 0, 0, 2, +2062, +0.2, -895, +0.5},
+		{0, 1, 0, 0, 0, +1426, -3.4, +54, -0.1},
+		{0, 0, 1, 0, 0, +712, +0.1, -7, 0},
+		{-2, 1, 0, 2, 2, -517, +1.2, +224, -0.6},
+		{0, 0, 0, 2, 1, -386, -0.4, +200, 0},
+		{0, 0, 1, 2, 2, -301, 0, +129, -0.1},
+		{-2, -1, 0, 2, 2, +217, -0.5, -95, +0.3},
+		{-2, 0, 1, 0, 0, -158, 0, 0, 0},
+		{-2, 0, 0, 2, 1, +129, +0.1, -70, 0},
+		{0, 0, -1, 2, 2, +123, 0, -53, 0},
+		{2, 0, 0, 0, 0, +63, 0, 0, 0},
+		{0, 0, 1, 0, 1, +63, +0.1, -33, 0},
+		{2, 0, -1, 2, 2, -59, 0, +26, 0},
+		{0, 0, -1, 0, 1, -58, -0.1, +32, 0},
+		{0, 0, 1, 2, 1, -51, 0, +27, 0},
+		{-2, 0, 2, 0, 0, +48, 0, 0, 0},
+		{0, 0, -2, 2, 1, +46, 0, -24, 0},
+		{2, 0, 0, 2, 2, -38, 0, +16, 0},
+		{0, 0, 2, 2, 2, -31, 0, +13, 0},
+		{0, 0, 2, 0, 0, +29, 0, 0, 0},
+		{-2, 0, 1, 2, 2, +29, 0, -12, 0},
+		{0, 0, 0, 2, 0, +26, 0, 0, 0},
+		{-2, 0, 0, 2, 0, -22, 0, 0, 0},
+		{0, 0, -1, 2, 1, +21, 0, -10, 0},
+		{0, 2, 0, 0, 0, +17, -0.1, 0, },
+		{2, 0, -1, 0, 1, +16, 0, -8, 0},
+		{-2, 2, 0, 2, 2, -16, +0.1, +7, 0},
+		{0, 1, 0, 0, 1, -15, 0, +9, 0},
+		{-2, 0, 1, 0, 1, -13, 0, +7, 0},
+		{0, -1, 0, 0, 1, -12, 0, +6, 0},
+		{0, 0, 2, -2, 0, +11, 0, 0, 0},
+		{2, 0, -1, 2, 1, -10, 0, +50, },
+		{2, 0, 1, 2, 2, -8, 0, +3, 0},
+		{0, 1, 0, 2, 2, +7, 0, -3, 0},
+		{-2, 1, 1, 0, 0, -7, 0, 0, 0},
+		{0, -1, 0, 2, 2, -7, 0, +3, 0},
+		{2, 0, 0, 2, 1, -7, 0, +3, 0},
+		{2, 0, 1, 0, 0, +6, 0, 0, 0},
+		{-2, 0, 2, 2, 2, +6, 0, -3, 0},
+		{-2, 0, 1, 2, 1, +6, 0, -3, 0},
+		{2, 0, -2, 0, 1, -6, 0, +3, 0},
+		{2, 0, 0, 0, 1, -6, 0, +3, 0},
+		{0, -1, 1, 0, 0, +5, 0, 0, 0},
+		{-2, -1, 0, 2, 1, -5, 0, +3, 0},
+		{-2, 0, 0, 0, 1, -5, 0, +3, 0},
+		{0, 0, 2, 2, 1, -5, 0, +3, 0},
+		{-2, 0, 2, 0, 1, +4, 0, 0, 0},
+		{-2, 1, 0, 2, 1, +4, 0, 0, 0},
+		{0, 0, 1, -2, 0, +4, 0, 0, 0},
+		{-1, 0, 1, 0, 0, -4, 0, 0, 0},
+		{-2, 1, 0, 0, 0, -4, 0, 0, 0},
+		{1, 0, 0, 0, 0, -4, 0, 0, 0},
+		{0, 0, 1, 2, 0, +3, 0, 0, 0},
+		{0, 0, -2, 2, 2, -3, 0, 0, 0},
+		{-1, -1, 1, 0, 0, -3, 0, 0, 0},
+		{0, 1, 1, 0, 0, -3, 0, 0, 0},
+		{0, -1, 1, 2, 2, -3, 0, 0, 0},
+		{2, -1, -1, 2, 2, -3, 0, 0, 0},
+		{0, 0, 3, 2, 2, -3, 0, 0, 0},
+		{2, -1, 0, 2, 2, -3, 0, 0, 0}
+};
+
+#define COUNT_IAU1980_ARGUMENT_PARAMS 4
+
+double LIST_IAU1980_ARGUMENT_D_PARAMS[] = {
+		297.85036, 455267.111480, -0.0019142, 1.0/189474.0
+};
+
+double LIST_IAU1980_ARGUMENT_M_PARAMS[] = {
+		357.52772, 35999.050340, -0.0001603, -1.0/300000.0
+};
+
+double LIST_IAU1980_ARGUMENT_Mp_PARAMS[] = {
+		134.96298, 477198.867398, 0.0086972, 1.0/56250.0
+};
+
+double LIST_IAU1980_ARGUMENT_F_PARAMS[] = {
+		93.27191, 483202.017538, -0.0036825, 1.0/327270.0
+};
+
+double LIST_IAU1980_ARGUMENT_Omega_PARAMS[] = {
+		125.04452, -1934.136261, 0.0020708, 1.0/450000.0
+};
+
+
+/**
+ * Refer to Chapter 45 in Astronomical Algorithms
  * Terms of Moon Longitude
+ * {a for D, b for M, c for M', d for F, amplitude A for ¦²I, amplitude A for ¦²r }
  * */
 #define COUNT_TERM_ELP200082_LONGITUDE 60
-extern PTERM_ELP200082_MOON LIST_TERM_ELP200082_LONGITUDE = {
+STERM_ELP200082_MOON LIST_TERM_ELP200082_LONGITUDE[] = {
 		{0, 0, 1, 0, 6288744, -20905355},
 		{2, 0, -1, 0, 1274027, -3699111},
 		{2, 0, 0, 0, 658314, -2955968},
@@ -86,10 +186,12 @@ extern PTERM_ELP200082_MOON LIST_TERM_ELP200082_LONGITUDE = {
 };
 
 /**
+ * Refer to Chapter 45 in Astronomical Algorithms
  * Terms of Moon Latitude
+ * {a for D, b for M, c for M', d for F, amplitude A for ¦²I, reserved}
  * */
 #define COUNT_TERM_ELP200082_LATITUDE 60
-extern PTERM_ELP200082_MOON LIST_TERM_ELP200082_LATITUDE = {
+STERM_ELP200082_MOON LIST_TERM_ELP200082_LATITUDE[] = {
 		{0, 0, 0, 1, 5128122, 0},
 		{0, 0, 1, 1, 280602, 0},
 		{0, 0, 1, -1, 277693, 0},
@@ -154,53 +256,217 @@ extern PTERM_ELP200082_MOON LIST_TERM_ELP200082_LATITUDE = {
 
 #define COUNT_ELP200082_ARGUMENT_PARAMS 5
 
-extern double *LIST_ELP200082_ARGUMENT_D_PARAMS = {
+double LIST_ELP200082_ARGUMENT_D_PARAMS[] = {
 		297.8502042, 445267.1115168, -0.0016300, 1.0/545868.0, -1.0/113065000.0
 };
 
-extern double *LIST_ELP200082_ARGUMENT_M_PARAMS = {
+double LIST_ELP200082_ARGUMENT_M_PARAMS[] = {
 		357.5291092, 35999.0502909, -0.0001536, -1.0/24490000.0, 0
 };
 
-extern double *LIST_ELP200082_ARGUMENT_Mp_PARAMS = {
+double LIST_ELP200082_ARGUMENT_Mp_PARAMS[] = {
 		134.9634114, 477198.8676313, 0.0089970, 1.0/69699.0, -1.0/14712000.0
 };
 
-extern double *LIST_ELP200082_ARGUMENT_F_PARAMS = {
-		93.2720993, 483202.0175273, -0.0034029, -1.0/3526000.0, -1.0/863310000.0
+double LIST_ELP200082_ARGUMENT_F_PARAMS[] = {
+		93.2720993, 483202.0175273, -0.0034029, -1.0/3526000.0, 1.0/863310000.0
 };
 
+double LIST_ELP200082_ARGUMENT_Lp_PARAMS[] = {
+		218.3164591, 481267.88134236, - 0.0013268, 1.0/538841.0, -1.0/65194000.0
+};
+
+void calculateIAU1980EarthNutationParameters(double dt, PPARAM_TERM_IAU1980_NUTATION params)
+{
+	//D = 297.85036 + 455267.111480 * T - 0.0019142 * T2 + T3 / 189474
+	params->D = 0.0;
+	for(int i = COUNT_IAU1980_ARGUMENT_PARAMS - 1; i >=0; --i)
+	{
+		params->D *= dt;
+		params->D += LIST_IAU1980_ARGUMENT_D_PARAMS[i];
+	}
+	//M = 357.52772 + 35999.050340 * T - 0.0001603 * T2 - T3 / 300000
+	params->M = 0.0;
+	for(int i = COUNT_IAU1980_ARGUMENT_PARAMS - 1; i >=0; --i)
+	{
+		params->M *= dt;
+		params->M += LIST_IAU1980_ARGUMENT_M_PARAMS[i];
+	}
+	//M'= 134.96298 + 477198.867398 * T + 0.0086972 * T2 + T3 / 56250
+	params->Mp = 0.0;
+	for(int i = COUNT_IAU1980_ARGUMENT_PARAMS - 1; i >=0; --i)
+	{
+		params->Mp *= dt;
+		params->Mp += LIST_IAU1980_ARGUMENT_Mp_PARAMS[i];
+	}
+	//F = 93.27191 + 483202.017538 * T - 0.0036825 * T2 + T3 / 327270
+	params->F = 0.0;
+	for(int i = COUNT_IAU1980_ARGUMENT_PARAMS - 1; i >=0; --i)
+	{
+		params->F *= dt;
+		params->F += LIST_IAU1980_ARGUMENT_F_PARAMS[i];
+	}
+	//¦¸= 125.04452 - 1934.136261 * T + 0.0020708 * T2 + T3 / 450000
+	params->Omega = 0.0;
+	for(int i = COUNT_IAU1980_ARGUMENT_PARAMS - 1; i >=0; --i)
+	{
+		params->Omega *= dt;
+		params->Omega += LIST_IAU1980_ARGUMENT_Omega_PARAMS[i];
+	}
+}
+
 /**
+ * Calculate earth longitude nutation
+ * Refer to http://blog.csdn.net/orbit/article/details/7944248 CalcEarthLongitudeNutation
+ * return unit is degree.
+ * */
+double getIAU1980EarthLongitudeNutation(double dt)
+{
+	double dNutation = 0.0;
+
+	SPARAM_TERM_IAU1980_NUTATION params;
+	calculateIAU1980EarthNutationParameters(dt, &params);
+
+	double dTermDegree = 0.0;
+//	double dTermRadian = 0.0;
+	for(int i = 0; i < COUNT_TERM_IAU1980_NUTATION; ++i)
+	{
+		dTermDegree = LIST_TERM_IAU1980_NUTATION[i].D * params.D +
+				LIST_TERM_IAU1980_NUTATION[i].M * params.M +
+				LIST_TERM_IAU1980_NUTATION[i].Mp * params.Mp +
+				LIST_TERM_IAU1980_NUTATION[i].F * params.F +
+				LIST_TERM_IAU1980_NUTATION[i].Omega * params.Omega;
+		dTermDegree = getDegreeIn360(dTermDegree);//degree mod 360
+		dNutation += (LIST_TERM_IAU1980_NUTATION[i].sine1 + LIST_TERM_IAU1980_NUTATION[i].sine2 * dt) *
+				sin(getRadianFromDegree(dTermDegree));
+	}
+	//return should be 0.0001 / 3600.0, because 0.0001 is unit of sine1, and 3600 is degree second.
+	//unit is 0.0001".
+	return dNutation / 36000000.0;
+}
+
+/**
+ * Calculate when new moon appears.
+ * Refer to http://blog.csdn.net/orbit/article/details/8223751 GetMoonEclipticParameter
  * calculate parameters D, M, M', F in the formula ¦È = a * D + b * M + c * M' + d * F
  * */
-void calculateELP200082ArgParams(double dt,
-		double *paramD, double *paramM, double *paramMp, double *paramF)
+void calculateELP200082MEPeriodicTermParams(double dt,
+		PPARAM_TERM_ELP200082_MOON_ECLIPTIC params)
 {
-	paramD[0] = 0.0;
+	//D = 297.8502042 + 445267.1115168 * T^1 - 0.0016300 * T^2 + T^3 / 545868 - T^4 / 113065000
+	params->D = 0.0;
 	for(int i = COUNT_ELP200082_ARGUMENT_PARAMS - 1; i >=0; --i)
 	{
-		paramD[0] *= dt;
-		paramD[0] += LIST_ELP200082_ARGUMENT_D_PARAMS[i];
+		params->D *= dt;
+		params->D += LIST_ELP200082_ARGUMENT_D_PARAMS[i];
 	}
-	paramM[0] = 0.0;
+	//M = 357.5291092 + 35999.0502909 * T^1 - 0.0001536 * T^2 + T^3 / 24490000
+	params->M = 0.0;
 	for(int i = COUNT_ELP200082_ARGUMENT_PARAMS - 1; i >=0; --i)
 	{
-		paramM[0] *= dt;
-		paramM[0] += LIST_ELP200082_ARGUMENT_M_PARAMS[i];
+		params->M *= dt;
+		params->M += LIST_ELP200082_ARGUMENT_M_PARAMS[i];
 	}
-	paramMp[0] = 0.0;
+	//M' = 134.9634114 + 477198.8676313 * T^1 + 0.0089970 * T^2 + T^3 / 69699 - T^4 / 14712000
+	params->Mp = 0.0;
 	for(int i = COUNT_ELP200082_ARGUMENT_PARAMS - 1; i >=0; --i)
 	{
-		paramMp[0] *= dt;
-		paramMp[0] += LIST_ELP200082_ARGUMENT_Mp_PARAMS[i];
+		params->Mp *= dt;
+		params->Mp += LIST_ELP200082_ARGUMENT_Mp_PARAMS[i];
 	}
-	paramF[0] = 0.0;
+	//F = 93.2720993 + 483202.0175273 * T^1 - 0.0034029 * T^2 - T^3 / 3526000 + T^4 / 863310000
+	params->F = 0.0;
 	for(int i = COUNT_ELP200082_ARGUMENT_PARAMS - 1; i >=0; --i)
 	{
-		paramF[0] *= dt;
-		paramF[0] += LIST_ELP200082_ARGUMENT_F_PARAMS[i];
+		params->F *= dt;
+		params->F += LIST_ELP200082_ARGUMENT_F_PARAMS[i];
+	}
+	//E = 1 - 0.002516 * T^1 - 0.0000074 * T^2
+	params->E = (-0.0000074 * dt -0.002516) * dt + 1.0;
+	//L'=218.3164591 + 481267.88134236 * T - 0.0013268 * T^2 + T^3 / 538841 - T^4 / 65194000
+	params->Lp = 0.0;
+	for(int i = COUNT_ELP200082_ARGUMENT_PARAMS - 1; i >=0; --i)
+	{
+		params->Lp *= dt;
+		params->Lp += LIST_ELP200082_ARGUMENT_Lp_PARAMS[i];
 	}
 //	double d = PI;
+}
+
+/**
+ * Calculate when new moon appears.
+ * Refer to http://blog.csdn.net/orbit/article/details/8223751 CalcMoonECLongitudePeriodicTbl
+ * calculate each periodic term of moon ecliptic longitude and sum all of them,
+ * and then return this result.
+ * MELong means Moon Ecliptic Longitude = =
+ * */
+double getELP200082MELongPeriodicTermSum(double dt,
+		const PPARAM_TERM_ELP200082_MOON_ECLIPTIC params)
+{
+	double dSumI = 0.0;
+	double dTermDegree = 0.0; // degree
+	double dTermRadian = 0.0; // radian
+	for(int i=0; i < COUNT_TERM_ELP200082_LONGITUDE; ++i)
+	{
+		dTermDegree = LIST_TERM_ELP200082_LONGITUDE[i].D * params->D +
+				LIST_TERM_ELP200082_LONGITUDE[i].M * params->M +
+				LIST_TERM_ELP200082_LONGITUDE[i].Mp * params->Mp +
+				LIST_TERM_ELP200082_LONGITUDE[i].F * params->F;
+		dTermRadian = getRadianFromDegree(dTermDegree);
+		dSumI += LIST_TERM_ELP200082_LONGITUDE[i].amplitudeAsin * sin(dTermRadian) *
+				pow(params->E, fabs(LIST_TERM_ELP200082_LONGITUDE[i].M));
+	}
+	return dSumI;
+}
+/**
+ * Calculate when new moon appears.
+ * Refer to http://blog.csdn.net/orbit/article/details/8223751 CalcMoonLongitudePerturbation
+ * Used parameters are L' / F.
+ * */
+double getELP200082MELongPerturbation(double dt, const PPARAM_TERM_ELP200082_MOON_ECLIPTIC params)
+{
+	double dPerturbation = 0.0;
+	double T = dt;
+
+	//A1 = 119.75 + 131.849 * T degree
+	double degreeA1 = 119.75 + 131.849 * T;
+	//A2 = 53.09 + 479264.290 * T degree
+	double degreeA2 = 53.09 + 479264.290 * T;
+	degreeA1 = getDegreeIn360(degreeA1);
+	degreeA2 = getDegreeIn360(degreeA2);
+
+	//¦²I += +3958 * sin(A1) + 1962 * sin(L' - F) + 318 * sin(A2)
+	dPerturbation += 3958.0 * sin(getRadianFromDegree(degreeA1));
+	dPerturbation += 1962.0 * sin(getRadianFromDegree(params->Lp - params->F));
+	dPerturbation += 318.0 * sin(getRadianFromDegree(degreeA2));
+
+	return dPerturbation;
+}
+
+/**
+ * Calculate when new moon appears.
+ * Refer to http://blog.csdn.net/orbit/article/details/8223751 GetMoonEclipticLongitudeEC
+ * calculate Moon Ecliptic Longitude.
+ * */
+double getELP200082MELongitude(const time_t* timePoint)
+{
+	double longitude = 0.0;
+	double dJulianCentury = getJulianCenturyBySecond(timePoint);
+	//calculate term parameters of moon ecliptic longitude and latitude.
+	SPARAM_TERM_ELP200082_MOON_ECLIPTIC params;
+	calculateELP200082MEPeriodicTermParams(dJulianCentury, &params);
+	//calculate and sum all terms of moon ecliptic longitude.
+	double dSumI = getELP200082MELongPeriodicTermSum(dJulianCentury, &params);
+	//calculate perturbation which has influence on moon ecliptic longitude by Venus / Earth / Jupiter.
+	dSumI += getELP200082MELongPerturbation(dJulianCentury, &params);
+
+	//¦Ë = L'+ ¦²I / 1000000.0
+	longitude = params.Lp + dSumI/1000000.0;//millionth
+	//calculate nutation
+	longitude += getIAU1980EarthLongitudeNutation(dJulianCentury);
+	longitude = getDegreeIn360(longitude);//degree mod 360.0
+
+	return longitude;
 }
 
 /**

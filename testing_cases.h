@@ -64,4 +64,9 @@ int test_custom_calendar(int argc, const char **argv);
  * */
 int test_absolute_from_gregorian();
 
+/**
+ * number is 9
+ * */
+int test_math_formula(int argc, const char **argv);
+
 #endif

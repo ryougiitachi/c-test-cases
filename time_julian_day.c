@@ -48,7 +48,7 @@ PJULIAN_DAY getJulianDayBySecond(const time_t *timeptr)
 	return &RESULT_JULIAN_DAY;
 }
 
-void getSecondDayByJulian(time_t *timeptr, PJULIAN_DAY jd)
+void getSecondByJulianDay(time_t *timeptr, const PJULIAN_DAY jd)
 {
 	if(timeptr == NULL || jd == NULL)
 	{
@@ -64,4 +64,21 @@ void getSecondDayByJulian(time_t *timeptr, PJULIAN_DAY jd)
 	llJDsecs += jd->decimal * SECS_OF_DAY;
 	llJDsecs -= SECS_OF_JD_BEFORE_1970;
 	timeptr[0] = llJDsecs;
+}
+
+
+double getJulianCenturyByJulianDay(const PJULIAN_DAY jd)
+{
+	if(!jd)
+	{
+		return 0.0;
+	}
+	double dJulianDay = jd->integer + jd->decimal;
+	return (dJulianDay - 2451545.0) / 36525.0;
+}
+
+double getJulianCenturyBySecond(const time_t *timeptr)
+{
+	PJULIAN_DAY jd = getJulianDayBySecond(timeptr);
+	return getJulianCenturyByJulianDay(jd);
 }
