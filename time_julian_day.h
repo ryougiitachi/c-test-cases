@@ -19,13 +19,17 @@ typedef struct _SJULIAN_DAY
 	double decimal;
 } SJULIAN_DAY, *PJULIAN_DAY;
 
-PJULIAN_DAY getJulianDayBySecond(const time_t *);
+double getJulianDayBySecond(time_t);
 
-void getSecondByJulianDay(time_t *timeptr, const PJULIAN_DAY jd);
+time_t getSecondByJulianDay(double jd);
 
-double getJulianCenturyByJulianDay(const PJULIAN_DAY jd);
+double getJulianCenturyByJulianDay(double jd);
 
-double getJulianCenturyBySecond(const time_t *timeptr);
+double getJulianCenturyBySecond(time_t timeptr);
+
+double getJulianMillenniumByJulianDay(double jd);
+
+double getJulianMillenniumBySecond(time_t timePoint);
 
 #endif /* TIME_JULIAN_DAY_H_ */
 

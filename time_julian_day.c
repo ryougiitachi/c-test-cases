@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <math.h>
 #include "time_julian_day.h"
 #include "time_calendar.h"
 
@@ -20,65 +21,65 @@
 //const time_t SECS_OF_JD_BEFORE_1970 = (4713 * 365 + 4713 / 4 + 1 + 719163) * 86400ll - 43200;
 
 
-static SJULIAN_DAY RESULT_JULIAN_DAY;
+//static SJULIAN_DAY RESULT_JULIAN_DAY;
 
-PJULIAN_DAY getJulianDayBySecond(const time_t *timeptr)
+/**
+ * timeptr used to be declared as a time_t* point. 
+ * */
+double getJulianDayBySecond(time_t timePoint)
 {
-	if(!timeptr)
-	{
-		return &RESULT_JULIAN_DAY;
-	}
-	time_t lltime = timeptr[0];
+	time_t lltime = timePoint;
 	time_t llinteger;
 	time_t lldecimal = 0.0;
 	time_t llJDsecs = lltime + SECS_OF_JD_BEFORE_1970;
 	double ddecimal;
 
-	memset(&RESULT_JULIAN_DAY, 0, sizeof(SJULIAN_DAY));
 	llinteger = llJDsecs / SECS_OF_DAY;
 	lldecimal = llJDsecs - llinteger * SECS_OF_DAY;
 	if(lldecimal > 0)
 	{
 		ddecimal = lldecimal / (double)SECS_OF_DAY;
 	}
-
-	RESULT_JULIAN_DAY.integer = llinteger;
-	RESULT_JULIAN_DAY.decimal = ddecimal;
-
-	return &RESULT_JULIAN_DAY;
+	double dJulianDay = llinteger + ddecimal;
+	return dJulianDay;
 }
 
-void getSecondByJulianDay(time_t *timeptr, const PJULIAN_DAY jd)
+/**
+ * @param jd	Julian day.
+ * */
+time_t getSecondByJulianDay(double jd)
 {
-	if(timeptr == NULL || jd == NULL)
-	{
-		return;
-	}
-	//Temporarily check.
-	if(jd->integer < 0 ||  jd->decimal < 0.0)
-	{
-		return;
-	}
 	time_t llJDsecs = 0;
-	llJDsecs += jd->integer * SECS_OF_DAY;
-	llJDsecs += jd->decimal * SECS_OF_DAY;
+	time_t integer;
+	double decimal;
+	integer = (time_t)ceil(jd);
+	decimal = jd - ceil(jd);
+	llJDsecs += integer * SECS_OF_DAY;
+	llJDsecs += decimal * SECS_OF_DAY;
 	llJDsecs -= SECS_OF_JD_BEFORE_1970;
-	timeptr[0] = llJDsecs;
+	return llJDsecs;
 }
 
-
-double getJulianCenturyByJulianDay(const PJULIAN_DAY jd)
+double getJulianCenturyByJulianDay(double jd)
 {
-	if(!jd)
-	{
-		return 0.0;
-	}
-	double dJulianDay = jd->integer + jd->decimal;
-	return (dJulianDay - 2451545.0) / 36525.0;
+	double dJulianDaySince2000 = jd - 2451545.0;
+	return dJulianDaySince2000 / 36525.0;
 }
 
-double getJulianCenturyBySecond(const time_t *timeptr)
+double getJulianCenturyBySecond(time_t timePoint)
 {
-	PJULIAN_DAY jd = getJulianDayBySecond(timeptr);
+	double jd = getJulianDayBySecond(timePoint);
 	return getJulianCenturyByJulianDay(jd);
+}
+
+double getJulianMillenniumByJulianDay(double jd)
+{
+	double dJulianDaySince2000 = jd - 2451545.0;
+	return dJulianDaySince2000 / 365250.0;
+}
+
+double getJulianMillenniumBySecond(time_t timePoint)
+{
+	double jd = getJulianDayBySecond(timePoint);
+	return getJulianMillenniumByJulianDay(jd);
 }

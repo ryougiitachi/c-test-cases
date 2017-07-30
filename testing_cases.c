@@ -358,34 +358,33 @@ int test_custom_calendar(int argc, const char **argv)
 //	test_all_gre_constant();
 
 	PJULIAN_DAY jd;
+	double dJulianDay = 0.0;
 	for(int i = 0; i < argc; ++i)
 	{
-		jd = getJulianDayBySecond(arraylltime + i);
-		printf("The julian day is %"PRId64"+%lf. \n", jd->integer, jd->decimal);
-		printf("The julian day is %lf. \n", jd->integer+jd->decimal);
+		dJulianDay = getJulianDayBySecond(arraylltime[i]);
+		printf("The julian day is %lf. \n", dJulianDay);
 		//format '%I64d' expects argument of type 'long long int', but argument 2 has type 'double' [-Wformat=]
 //		printf("The julian day is %"PRId64". \n", jd->integer+jd->decimal);
 	}
 
 	time_t lltime;
-	jd = (PJULIAN_DAY)malloc(sizeof(SJULIAN_DAY));
-	jd->integer = 0;
-	jd->decimal = 0.0;
-	getSecondByJulianDay(&lltime, jd);
+	lltime = getSecondByJulianDay(0.0);
 	memcpy(&tmGregorian, gmtime_by_gre(&lltime), sizeof(struct tm));
 	printf("The 2451545.0 JD is %"PRId64". \n", lltime);
 	printf("The 2451545.0 JD is %05d-%02d-%02d %02d:%02d:%02d. \n",
 			tmGregorian.tm_year, tmGregorian.tm_mon, tmGregorian.tm_mday,
 			tmGregorian.tm_hour, tmGregorian.tm_min, tmGregorian.tm_sec);
-	free(jd);
-	jd = NULL;
 
 	for(int i = 0; i < argc; ++i)
 	{
 		printf("The time point %"PRId64" is %lf. \n", arraylltime[i],
-				getELP200082MELongitude(arraylltime + i));
+				getELP200082MELongitude(arraylltime[i]));
 	}
-
+	
+	dJulianDay = getJulianDayForNewMoonBySecond(arraylltime[0]);
+	lltime = getSecondByJulianDay(dJulianDay);
+	printf("lunar calendar is %lf, %"PRId64". \n", dJulianDay, lltime);
+	
 	;free(arraylltime);
 	arraylltime = NULL;
 	return 0;
